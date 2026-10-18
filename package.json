@@ -1,0 +1,44 @@
+{
+  "name": "caraveso",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "start:customer": "ng serve customer-web --proxy-config proxy.conf.json",
+    "start:admin": "ng serve admin-web --port 4201 --proxy-config proxy.conf.json",
+    "dev:server": "tsx watch server/src/server.ts",
+    "dev:worker": "tsx watch server/src/worker.ts",
+    "start:api": "node dist/server/server.js",
+    "start:worker": "node dist/server/worker.js",
+    "build:server": "tsc -p server/tsconfig.json",
+    "build:web": "ng build customer-web && ng build admin-web"
+  },
+  "private": true,
+  "packageManager": "npm@11.19.0",
+  "dependencies": {
+    "@angular/common": "19.2.25",
+    "@angular/compiler": "19.2.25",
+    "@angular/core": "19.2.25",
+    "@angular/forms": "19.2.25",
+    "@angular/platform-browser": "19.2.25",
+    "@angular/router": "19.2.25",
+    "dotenv": "^18.0.8",
+    "express": "^5.3.0",
+    "ng-packagr": "19.2.2",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "19.2.27",
+    "@angular/cli": "19.2.27",
+    "@angular/compiler-cli": "19.2.25",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.5",
+    "prettier": "^3.8.1",
+    "tsx": "^4.23.15",
+    "typescript": "5.8.3"
+  }
+}
