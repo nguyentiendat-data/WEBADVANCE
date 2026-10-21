@@ -12,6 +12,7 @@
     "dev:server": "tsx watch server/src/server.ts",
     "dev:worker": "tsx watch server/src/worker.ts",
     "seed": "tsx server/seed/seed.ts",
+    "test:server": "tsx --test \"server/**/*.test.ts\"",
     "start:api": "node dist/server/server.js",
     "start:worker": "node dist/server/worker.js",
     "build:server": "tsc -p server/tsconfig.json",

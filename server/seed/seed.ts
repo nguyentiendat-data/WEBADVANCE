@@ -5,6 +5,7 @@ import { config } from '../src/config/index.js';
 import { BannerModel } from '../src/modules/banners/banner.model.js';
 import { CategoryModel } from '../src/modules/categories/category.model.js';
 import { CollectionModel } from '../src/modules/collections/collection.model.js';
+import { DEFAULT_CHECKOUT_CONFIG } from '../src/modules/config/config.service.js';
 import { SystemConfigModel } from '../src/modules/config/system-config.model.js';
 import { InspirationModel } from '../src/modules/inspirations/inspiration.model.js';
 import { ProductModel, type ProductDoc } from '../src/modules/products/product.model.js';
@@ -792,6 +793,31 @@ async function seedConfigs(): Promise<void> {
       updatedBy: NO_USER,
     },
     { _id: 'labels.newDays', value: 30, description: 'Số ngày nhãn Mới', updatedBy: NO_USER },
+    {
+      _id: 'payment',
+      value: DEFAULT_CHECKOUT_CONFIG.payment,
+      description: 'COD/QR, hạn QR, ngưỡng và tỉ lệ đặt cọc',
+      updatedBy: NO_USER,
+    },
+    {
+      _id: 'payment.bankAccount',
+      // Tài khoản demo cho QR, không phải tài khoản thật.
+      value: { ...DEFAULT_CHECKOUT_CONFIG.bankAccount, accountNumber: '0123456789' },
+      description: 'Tài khoản ngân hàng nhận tiền QR',
+      updatedBy: NO_USER,
+    },
+    {
+      _id: 'shipping',
+      value: DEFAULT_CHECKOUT_CONFIG.shipping,
+      description: 'Phí 4 cấp vận chuyển, khung giờ, số ngày chuẩn bị, hẹn lịch',
+      updatedBy: NO_USER,
+    },
+    {
+      _id: 'invoice',
+      value: DEFAULT_CHECKOUT_CONFIG.invoice,
+      description: 'Thuế suất VAT in trên hóa đơn',
+      updatedBy: NO_USER,
+    },
   ]);
 }
 
