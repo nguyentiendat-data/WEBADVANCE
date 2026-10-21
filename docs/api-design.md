@@ -664,7 +664,7 @@ Mọi field tùy chọn, gửi field nào đổi field đó:
       "id": "itemId", "variantId": "...", "isSelected": true, "quantity": 1,
       "hasInstallation": true, "note": null,
       "product": { "id": "...", "name": "Sofa Oslo", "slug": "...", "thumbnail": "..." },
-      "variant": { "color": "Xám", "material": "Vải", "dimensions": "220x95x85", "stockStatus": "IN_STOCK" },
+      "variant": { "sku": "100.001.01", "color": "Xám", "material": "Vải", "dimensions": "220x95x85", "stockStatus": "IN_STOCK", "installationService": "OPTIONAL", "unitInstallationFee": 300000 },
       "priceAtAdd": 15000000, "currentPrice": 14000000,
       "pricing": { "unitPrice": 14000000, "promotionId": null, "promotionDiscount": 0, "lineTotal": 14000000 },
       "shippingTier": 3, "shippingFee": 250000, "installationFee": 300000,
@@ -676,7 +676,7 @@ Mọi field tùy chọn, gửi field nào đổi field đó:
 }
 ```
 
-`warnings`: `PRICE_CHANGED` (`priceAtAdd` khác giá hiện tại), `OUT_OF_STOCK`, `LOW_STOCK`, `EXCEEDS_STOCK` (tồn kho giảm xuống dưới `quantity`; dòng có thêm `"available": N`, chỉ trả số này khi có cảnh báo), `VARIANT_UNAVAILABLE`. Hết hàng/đổi giá vẫn cho sửa hoặc xóa. Dòng có `OUT_OF_STOCK`, `EXCEEDS_STOCK`, `VARIANT_UNAVAILABLE` bị server tự đặt `isSelected = false`, không tự sửa `quantity`. `summary` chỉ tính các dòng `isSelected = true`. `installationFee` của dòng = phí lắp đặt × `quantity`.
+`warnings`: `PRICE_CHANGED` (`priceAtAdd` khác giá hiện tại), `OUT_OF_STOCK`, `LOW_STOCK`, `EXCEEDS_STOCK` (tồn kho giảm xuống dưới `quantity`; dòng có thêm `"available": N`, chỉ trả số này khi có cảnh báo), `VARIANT_UNAVAILABLE`. Hết hàng/đổi giá vẫn cho sửa hoặc xóa. Dòng có `OUT_OF_STOCK`, `EXCEEDS_STOCK`, `VARIANT_UNAVAILABLE` bị server tự đặt `isSelected = false`, không tự sửa `quantity`. `summary` chỉ tính các dòng `isSelected = true`. `installationFee` của dòng = phí lắp đặt × `quantity`; `variant.unitInstallationFee` là phí cho một sản phẩm để hiển thị ô chọn lắp đặt. `priceAtAdd` và `currentPrice` là giá **một sản phẩm sau khuyến mãi** (giá khách trả), còn `pricing.unitPrice` là giá bán trước khuyến mãi. `appliedVoucher` luôn `null` cho đến khi làm voucher.
 
 ### 7.3. Quy tắc voucher (FR-30 / MA-04)
 
@@ -1313,6 +1313,7 @@ Những chỗ này contract đã đề xuất cách xử lý, cần nhóm đồn
 | 1.5 | 2026-10-20 | Trang chủ: định nghĩa response `GET /inspirations/:id` cho popup Shop by look |
 | 1.6 | 2026-10-21 | Fit your home: mở rộng response `POST /fit-your-home/check` (`status`, `details[]` có `posture`, `minClearanceCm`, `note`, `usedDimensions`), thêm `POST /fit-your-home/similar` |
 | 1.7 | 2026-10-21 | Giỏ hàng và thanh toán (`cart-checkout-spec.md`): chặn vượt tồn ở `/cart*` (`INSUFFICIENT_STOCK`, cảnh báo `EXCEEDS_STOCK`), lắp đặt chỉ cấp 3–4 và tính theo số lượng, voucher không giảm phí, ngày giao dự kiến theo `leadDays`, hẹn lịch chỉ đơn có hàng cấp 3–4 (`schedulable`), `POST /orders` thêm `expectedTotal` (`PRICE_CHANGED`) và `invoiceInfo` (FR-45), lưu `orders.source` và trả dòng vào giỏ khi đơn từ giỏ bị hủy lúc chờ thanh toán, gửi email hóa đơn khi khách chọn |
+| 1.8 | 2026-10-21 | `GET /cart`: thêm `variant.sku`, `variant.installationService`, `variant.unitInstallationFee`; ghi rõ `priceAtAdd`/`currentPrice` là giá sau khuyến mãi; `GET /config/public` đã trả `payment`, `shipping`, `invoice` |
 
 ---
 

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { bannerRoutes } from './banners/banner.routes.js';
+import { cartRoutes } from './cart/cart.routes.js';
 import { categoryRoutes } from './categories/category.routes.js';
 import { collectionRoutes } from './collections/collection.routes.js';
 import { configRoutes } from './config/config.routes.js';
@@ -12,6 +13,7 @@ import { showroomRoutes } from './showrooms/showroom.routes.js';
 export const apiRoutes = Router();
 
 apiRoutes.use('/banners', bannerRoutes);
+apiRoutes.use('/cart', cartRoutes);
 apiRoutes.use('/categories', categoryRoutes);
 apiRoutes.use('/collections', collectionRoutes);
 apiRoutes.use('/config', configRoutes);

@@ -35,7 +35,7 @@ export interface ProductListItem {
 const NEW_BADGE_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function variantStockStatus(variant: VariantDoc): StockStatus {
+export function variantStockStatus(variant: VariantDoc): StockStatus {
   if (variant.stockQuantity <= 0) return 'OUT_OF_STOCK';
   if (variant.stockQuantity <= variant.lowStockThreshold) return 'LOW_STOCK';
   return 'IN_STOCK';
@@ -61,7 +61,7 @@ function resolveBadges(product: ProductDoc, now: Date): Badge[] {
   return badges;
 }
 
-function pickThumbnail(product: ProductDoc): string {
+export function pickThumbnail(product: ProductDoc): string {
   const images = product.media
     .filter((m) => m.type === 'IMAGE')
     .sort((a, b) => a.displayOrder - b.displayOrder);

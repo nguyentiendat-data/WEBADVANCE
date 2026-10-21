@@ -126,6 +126,31 @@ interface ProductSeed {
   packages?: VariantPackage[];
 }
 
+/**
+ * Dữ liệu đa dạng để thử giỏ hàng và thanh toán (spec giỏ hàng mục 1.2, 2.3): cấp vận chuyển
+ * 1–2, lắp đặt tùy chọn/bắt buộc (chỉ cấp 3–4), sắp hết, hết hàng, ngừng bán.
+ * `stock` và `status` theo thứ tự `colors`. Không khai báo thì cấp 3, không lắp đặt, tồn 25.
+ */
+interface VariantOverride {
+  tier?: number;
+  installation?: { service: 'OPTIONAL' | 'REQUIRED'; fee: number };
+  stock?: number[];
+  status?: VariantDoc['status'][];
+}
+
+const VARIANT_OVERRIDES: Record<string, VariantOverride> = {
+  'Sofa Oslo': { installation: { service: 'OPTIONAL', fee: 300000 } },
+  'Bàn ăn Oak 6 ghế': { installation: { service: 'OPTIONAL', fee: 400000 } },
+  'Giường Kyoto': { installation: { service: 'REQUIRED', fee: 500000 } },
+  'Tủ quần áo Mori': { installation: { service: 'REQUIRED', fee: 600000 } },
+  'Ghế ăn Wishbone': { tier: 2, stock: [25, 3] },
+  'Ghế đôn Pouf Cloud': { tier: 1 },
+  'Gương tròn Sun': { tier: 1 },
+  'Bộ chăn ga Cotton Satin': { tier: 1, stock: [25, 0] },
+  'Đèn sàn Arc': { tier: 2, stock: [2, 25] },
+  'Bàn làm việc Minimal': { tier: 2, status: ['ACTIVE', 'DISCONTINUED'] },
+};
+
 const DEFAULT_DIMENSIONS = { length: 200, width: 90, height: 80, unit: 'cm' };
 const DEFAULT_PACKAGES: VariantPackage[] = [
   { index: 1, name: 'Kiện hàng', length: 205, width: 95, height: 85, weight: 45 },
@@ -453,19 +478,21 @@ async function seedProducts(
     const created = await ProductModel.create(product);
     ids.set(seed.name, created._id);
 
+    const override = VARIANT_OVERRIDES[seed.name] ?? {};
     const variants: Partial<VariantDoc>[] = seed.colors.map((color, i) => ({
       productId: created._id,
       sku: `${productCode}.${String(i + 1).padStart(2, '0')}`,
       color,
       dimensions: DEFAULT_DIMENSIONS,
-      shippingTier: 3,
+      shippingTier: override.tier ?? 3,
       packages: seed.packages ?? DEFAULT_PACKAGES,
       originalPrice: seed.original,
       salePrice: seed.price,
-      stockQuantity: 25,
+      stockQuantity: override.stock?.[i] ?? 25,
       lowStockThreshold: 5,
-      installationService: 'NONE',
-      status: 'ACTIVE',
+      installationService: override.installation?.service ?? 'NONE',
+      installationFee: override.installation?.fee,
+      status: override.status?.[i] ?? 'ACTIVE',
     }));
     await VariantModel.insertMany(variants);
   }

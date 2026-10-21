@@ -274,7 +274,7 @@ Collection: `carts` (trước đây: `GIOHANG`, kèm `CHITIETGIOHANG` đã gộp
 | 6 | items[].variantId | ObjectId (ref: product_variants) | Y | Biến thể sản phẩm |
 | 7 | items[].quantity | Number | Y | Min: 1. Số lượng |
 | 8 | items[].isSelected | Boolean | Y | Default: true. Được chọn để thanh toán |
-| 9 | items[].priceAtAdd | Number | Y | Giá lúc thêm vào giỏ, so với giá hiện tại để báo đổi giá |
+| 9 | items[].priceAtAdd | Number | Y | Giá một sản phẩm sau khuyến mãi lúc thêm vào giỏ (hoặc lúc đổi số lượng/biến thể), so với giá hiện tại để báo đổi giá |
 | 10 | items[].hasInstallation | Boolean | | Default: false. Khách chọn dịch vụ lắp đặt |
 | 11 | items[].note | String | | Max 500. Ghi chú tùy chọn |
 
