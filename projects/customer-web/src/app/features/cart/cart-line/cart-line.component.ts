@@ -11,6 +11,7 @@ import { RouterLink } from '@angular/router';
 import type { CartItem } from 'shared';
 import { CartStore } from '../../../core/cart/cart.store';
 import { VariantPickerService } from '../../../core/cart/variant-picker.service';
+import { ConfirmService } from '../../../core/confirm/confirm.service';
 import { toApiError } from '../../../core/http/api-error';
 import { ToastService } from '../../../core/toast/toast.service';
 import { VndPipe } from '../../../shared/pipes/vnd.pipe';
@@ -37,6 +38,7 @@ const QUANTITY_DEBOUNCE_MS = 400;
 export class CartLineComponent {
   private readonly store = inject(CartStore);
   private readonly toast = inject(ToastService);
+  private readonly confirm = inject(ConfirmService);
   private readonly picker = inject(VariantPickerService);
 
   readonly item = input.required<CartItem>();
@@ -111,10 +113,17 @@ export class CartLineComponent {
   }
 
   protected async remove(): Promise<void> {
-    if (!confirm(`Xóa "${this.item().product.name}" khỏi giỏ hàng?`)) return;
+    const { name } = this.item().product;
+    const ok = await this.confirm.ask({
+      title: 'Xóa sản phẩm khỏi giỏ hàng?',
+      message: name,
+      confirmText: 'Xóa',
+    });
+    if (!ok) return;
     this.saving.set(true);
     try {
       await this.store.remove(this.item().id);
+      this.toast.success(`Đã xóa "${name}" khỏi giỏ hàng`);
     } catch (err) {
       this.toast.error(toApiError(err).message);
       this.saving.set(false);

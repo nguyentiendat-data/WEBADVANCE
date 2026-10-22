@@ -6,6 +6,7 @@ import { FloatingActionsComponent } from './layout/floating-actions/floating-act
 import { FooterComponent } from './layout/footer/footer.component';
 import { HeaderComponent } from './layout/header/header.component';
 import { ToastComponent } from './layout/toast/toast.component';
+import { ConfirmComponent } from './layout/confirm/confirm.component';
 import { VariantPickerService } from './core/cart/variant-picker.service';
 import { VariantPickerComponent } from './shared/ui/variant-picker/variant-picker.component';
 
@@ -18,6 +19,7 @@ import { VariantPickerComponent } from './shared/ui/variant-picker/variant-picke
     FloatingActionsComponent,
     VariantPickerComponent,
     ToastComponent,
+    ConfirmComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.html',

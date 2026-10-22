@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { CatalogApiService, type PublicConfig } from 'shared';
 import { catchError, of } from 'rxjs';
 import { CartStore } from '../../core/cart/cart.store';
+import { ConfirmService } from '../../core/confirm/confirm.service';
 import { toApiError } from '../../core/http/api-error';
 import { ToastService } from '../../core/toast/toast.service';
 import { CompactHeaderComponent } from '../../layout/compact-header/compact-header.component';
@@ -22,6 +23,7 @@ import { isBlocking } from './cart-rules';
 export class CartComponent {
   protected readonly store = inject(CartStore);
   private readonly toast = inject(ToastService);
+  private readonly confirm = inject(ConfirmService);
   private readonly router = inject(Router);
 
   private readonly config = toSignal(
@@ -69,7 +71,13 @@ export class CartComponent {
 
   protected async removeSelected(): Promise<void> {
     const ids = this.selected().map((i) => i.id);
-    if (!ids.length || !confirm(`Xóa ${ids.length} sản phẩm đã chọn khỏi giỏ hàng?`)) return;
+    if (!ids.length) return;
+    const ok = await this.confirm.ask({
+      title: 'Xóa sản phẩm đã chọn?',
+      message: `${ids.length} sản phẩm sẽ bị xóa khỏi giỏ hàng.`,
+      confirmText: 'Xóa',
+    });
+    if (!ok) return;
     this.busy.set(true);
     try {
       // ponytail: xóa từng dòng vì API chưa có xóa hàng loạt; thêm endpoint nếu giỏ thường rất dài.
