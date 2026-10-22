@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -29,16 +29,20 @@ export class App {
   private readonly router = inject(Router);
   protected readonly picker = inject(VariantPickerService);
 
-  /** Route khai báo `data: { layout: 'compact' }` tự hiển thị header riêng, ẩn header và nút nổi chung. */
-  protected readonly compact = toSignal(
+  /**
+   * `data: { layout }` trên route: `'compact'` tự hiển thị header riêng, ẩn header và nút nổi chung;
+   * `'solid'` dùng header chung nhưng nền trắng ngay từ đầu cho trang không có ảnh lớn đầu trang.
+   */
+  private readonly layout = toSignal(
     this.router.events.pipe(
       filter((e) => e instanceof NavigationEnd),
       map(() => {
         let route = this.router.routerState.snapshot.root;
         while (route.firstChild) route = route.firstChild;
-        return route.data['layout'] === 'compact';
+        return route.data['layout'] as 'compact' | 'solid' | undefined;
       }),
     ),
-    { initialValue: false },
   );
+  protected readonly compact = computed(() => this.layout() === 'compact');
+  protected readonly solid = computed(() => this.layout() === 'solid');
 }

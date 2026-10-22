@@ -7,7 +7,6 @@ import { CartStore } from '../../core/cart/cart.store';
 import { ConfirmService } from '../../core/confirm/confirm.service';
 import { toApiError } from '../../core/http/api-error';
 import { ToastService } from '../../core/toast/toast.service';
-import { CompactHeaderComponent } from '../../layout/compact-header/compact-header.component';
 import { VndPipe } from '../../shared/pipes/vnd.pipe';
 import { CartLineComponent } from './cart-line/cart-line.component';
 import { isBlocking } from './cart-rules';
@@ -15,7 +14,7 @@ import { isBlocking } from './cart-rules';
 /** Trang giỏ hàng (FR-29; spec giỏ hàng mục 4.3). */
 @Component({
   selector: 'app-cart',
-  imports: [RouterLink, CompactHeaderComponent, CartLineComponent, VndPipe],
+  imports: [RouterLink, CartLineComponent, VndPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cart.component.html',
   styleUrl: './cart.component.css',

@@ -6,6 +6,6 @@ export const CART_ROUTES: Routes = [
     path: '',
     component: CartComponent,
     title: 'Giỏ hàng | CaraVeso',
-    data: { layout: 'compact' },
+    data: { layout: 'solid' },
   },
 ];

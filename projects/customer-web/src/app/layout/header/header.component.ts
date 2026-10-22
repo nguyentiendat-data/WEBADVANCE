@@ -4,6 +4,7 @@ import {
   ElementRef,
   effect,
   inject,
+  input,
   signal,
   viewChild,
 } from '@angular/core';
@@ -24,6 +25,7 @@ const SCROLL_THRESHOLD = 24;
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.scrolled]': 'scrolled()',
+    '[class.solid]': 'solid()',
     '[class.menu-open]': 'menuOpen()',
     '[class.search-open]': 'search.open()',
     '(window:scroll)': 'onScroll()',
@@ -33,6 +35,9 @@ const SCROLL_THRESHOLD = 24;
 })
 export class HeaderComponent {
   private readonly api = inject(CatalogApiService);
+
+  /** Nền trắng chữ đen ngay từ đầu, cho trang không có ảnh lớn đầu trang (giỏ hàng). */
+  readonly solid = input(false);
 
   protected readonly search = inject(SearchUiService);
   protected readonly cart = inject(CartStore);

@@ -1,7 +1,7 @@
 @if (!compact()) {
-  <app-header />
+  <app-header [solid]="solid()" />
 }
-<main>
+<main [class.under-header]="solid()">
   <router-outlet />
 </main>
 <app-footer />
