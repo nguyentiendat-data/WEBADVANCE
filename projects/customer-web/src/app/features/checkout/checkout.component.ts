@@ -6,6 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -20,15 +21,24 @@ import {
   type DeliverySlot,
   type PublicConfig,
 } from 'shared';
-import { catchError, debounceTime, filter, finalize, firstValueFrom, of, switchMap } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  filter,
+  finalize,
+  firstValueFrom,
+  map,
+  of,
+  startWith,
+  switchMap,
+} from 'rxjs';
 import { clearBuyNow, readBuyNow, saveBuyNow, type BuyNowItem } from '../../core/cart/buy-now';
 import { CartStore } from '../../core/cart/cart.store';
 import { toApiError } from '../../core/http/api-error';
 import { ToastService } from '../../core/toast/toast.service';
 import { CompactHeaderComponent } from '../../layout/compact-header/compact-header.component';
 import { VndPipe } from '../../shared/pipes/vnd.pipe';
-import { QuantityStepperComponent } from '../../shared/ui/quantity-stepper/quantity-stepper.component';
-import { CartLineComponent } from '../cart/cart-line/cart-line.component';
+import { IconComponent } from '../../shared/ui/icons/icon.component';
 import {
   defaultPayment,
   formatDay,
@@ -48,16 +58,15 @@ const PREVIEW_DEBOUNCE_MS = 300;
 
 const PHONE = /^(0|\+84)\d{9}$/;
 
+/** `public/data/vn-units.json`: 34 tỉnh/thành và phường/xã sau sáp nhập 2025, không còn cấp huyện. */
+interface VnUnits {
+  provinces: { name: string; wards: string[] }[];
+}
+
 /** Trang thanh toán (FR-31 → FR-39, FR-45; spec mục 3.2, 4.4). */
 @Component({
   selector: 'app-checkout',
-  imports: [
-    ReactiveFormsModule,
-    CompactHeaderComponent,
-    CartLineComponent,
-    QuantityStepperComponent,
-    VndPipe,
-  ],
+  imports: [ReactiveFormsModule, CompactHeaderComponent, IconComponent, VndPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './checkout.component.html',
   styleUrl: './checkout.component.css',
@@ -69,6 +78,7 @@ export class CheckoutComponent {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly http = inject(HttpClient);
 
   protected readonly source =
     inject(ActivatedRoute).snapshot.queryParamMap.get('source') === 'buy-now' ? 'BUY_NOW' : 'CART';
@@ -92,10 +102,32 @@ export class CheckoutComponent {
     recipientPhone: ['', [Validators.required, Validators.pattern(PHONE)]],
     addressLine: ['', [Validators.required, Validators.maxLength(200)]],
     ward: ['', [Validators.required, Validators.maxLength(100)]],
-    district: ['', Validators.maxLength(100)],
     province: ['', [Validators.required, Validators.maxLength(100)]],
+    isDefault: [false],
   });
   protected readonly addressSubmitted = signal(false);
+  private readonly addressValid = toSignal(
+    this.addressForm.statusChanges.pipe(map((status) => status === 'VALID')),
+    { initialValue: false },
+  );
+  /** Danh sách tỉnh/phường chỉ tải khi lần đầu mở form địa chỉ. */
+  protected readonly units = toSignal(
+    toObservable(this.addingAddress).pipe(
+      filter(Boolean),
+      switchMap(() =>
+        this.http
+          .get<VnUnits>('/data/vn-units.json')
+          .pipe(catchError(() => of<VnUnits>({ provinces: [] }))),
+      ),
+    ),
+  );
+  private readonly province = toSignal(
+    this.addressForm.controls.province.valueChanges.pipe(startWith('')),
+    { initialValue: '' },
+  );
+  protected readonly wards = computed(
+    () => this.units()?.provinces.find((p) => p.name === this.province())?.wards ?? [],
+  );
 
   // Mục 2: đơn tạm của Mua nhanh (nguồn giỏ sửa thẳng qua CartStore).
   protected readonly buyNowItems = signal<BuyNowItem[]>(readBuyNow());
@@ -146,9 +178,6 @@ export class CheckoutComponent {
     return this.store.cart() ? base : null;
   });
 
-  protected readonly cartLines = computed(() =>
-    (this.store.cart()?.items ?? []).filter((i) => i.isSelected),
-  );
   protected readonly itemCount = computed(() =>
     (this.preview()?.items ?? []).reduce((n, i) => n + i.quantity, 0),
   );
@@ -172,7 +201,10 @@ export class CheckoutComponent {
   protected readonly firstProblem = computed(() => {
     const p = this.preview();
     if (!p) return null;
-    const issue = p.blockingIssues[0];
+    // Đang nhập địa chỉ mới: địa chỉ được lưu khi bấm Thanh toán nên chỉ cần form hợp lệ.
+    const adding = this.addingAddress();
+    if (adding && !this.addressValid()) return 'Kiểm tra lại địa chỉ giao hàng';
+    const issue = p.blockingIssues.find((i) => !(adding && i.code === 'ADDRESS_REQUIRED'));
     if (issue) {
       const name = p.items.find((i) => i.variantId === issue.variantId)?.product.name;
       return issueMessage(issue, name);
@@ -200,7 +232,8 @@ export class CheckoutComponent {
 
     toObservable(this.request)
       .pipe(
-        filter((r): r is CheckoutRequest => r !== null),
+        // Đang đặt hàng (lưu địa chỉ mới đổi addressId): preview lúc này có thể thấy giỏ đã trống.
+        filter((r): r is CheckoutRequest => r !== null && !this.placing()),
         debounceTime(PREVIEW_DEBOUNCE_MS),
         switchMap((req) => {
           this.previewing.set(true);
@@ -285,15 +318,21 @@ export class CheckoutComponent {
     this.addressId.set(id);
   }
 
-  protected async saveAddress(): Promise<void> {
-    this.addressSubmitted.set(true);
-    if (this.addressForm.invalid) return;
+  protected startAddingAddress(): void {
+    this.addressForm.reset();
+    this.addressSubmitted.set(false);
+    this.addingAddress.set(true);
+  }
+
+  protected changeProvince(): void {
+    this.addressForm.controls.ward.setValue('');
+  }
+
+  /** Lưu địa chỉ đang nhập vào sổ (spec mục 6, quyết định 13) và chọn nó; lỗi thì trả về false. */
+  private async saveAddress(): Promise<boolean> {
     this.savingAddress.set(true);
     try {
-      const { district, ...rest } = this.addressForm.getRawValue();
-      const created = await firstValueFrom(
-        this.addressApi.create({ ...rest, ...(district.trim() ? { district } : {}) }),
-      );
+      const created = await firstValueFrom(this.addressApi.create(this.addressForm.getRawValue()));
       // Địa chỉ đầu tiên server tự đặt mặc định; tải lại để đúng thứ tự.
       const list = await firstValueFrom(this.addressApi.list());
       this.addresses.set(list);
@@ -301,8 +340,10 @@ export class CheckoutComponent {
       this.addingAddress.set(false);
       this.addressForm.reset();
       this.addressSubmitted.set(false);
+      return true;
     } catch (err) {
       this.toast.error(toApiError(err).message);
+      return false;
     } finally {
       this.savingAddress.set(false);
     }
@@ -321,22 +362,34 @@ export class CheckoutComponent {
     return [a.addressLine, a.ward, a.district, a.province].filter(Boolean).join(', ');
   }
 
-  // ---- Mục 2: sản phẩm (Mua nhanh) ----
+  // ---- Sản phẩm và lắp đặt (sửa số lượng thì quay lại giỏ) ----
 
-  protected changeBuyNow(index: number, patch: Partial<BuyNowItem>): void {
-    const items = this.buyNowItems().map((item, i) => (i === index ? { ...item, ...patch } : item));
-    this.buyNowItems.set(items);
-    saveBuyNow(items);
+  /** Giỏ thì lưu vào dòng giỏ, mua nhanh thì sửa đơn tạm; preview tự tính lại theo thay đổi. */
+  protected async setInstallation(item: CheckoutItem, hasInstallation: boolean): Promise<void> {
+    if (!item.cartItemId) {
+      const items = this.buyNowItems().map((i) =>
+        i.variantId === item.variantId ? { ...i, hasInstallation } : i,
+      );
+      this.buyNowItems.set(items);
+      saveBuyNow(items);
+      return;
+    }
+    try {
+      await this.store.update(item.cartItemId, { hasInstallation });
+    } catch (err) {
+      this.toast.error(toApiError(err).message);
+    }
   }
 
-  protected previewLine(variantId: string): CheckoutItem | undefined {
-    return this.preview()?.items.find((i) => i.variantId === variantId);
+  /** Lỗi tồn kho của một dòng, hiện ngay dưới sản phẩm ở cột tóm tắt. */
+  protected blockingMessage(item: CheckoutItem): string | null {
+    const issue = this.issues().find((i) => i.variantId === item.variantId);
+    return issue ? issueMessage(issue, item.product.name) : null;
   }
 
-  protected variantText(item: CheckoutItem): string {
-    const { color, material, dimensions } = item.variant;
-    const size = dimensions ? `${dimensions.replaceAll('x', '×')} cm` : null;
-    return [color, material, size].filter(Boolean).join(' / ');
+  protected sizeText(item: CheckoutItem): string | null {
+    const { dimensions } = item.variant;
+    return dimensions ? `${dimensions.replaceAll('x', '×')} cm` : null;
   }
 
   // ---- Mục 3: giao hàng ----
@@ -370,12 +423,18 @@ export class CheckoutComponent {
 
   protected async place(): Promise<void> {
     this.submitted.set(true);
+    if (this.addingAddress()) this.addressSubmitted.set(true);
     const preview = this.preview();
     const payment = this.payment();
     if (!preview || !payment || !this.canPlace()) return;
 
     this.placing.set(true);
     this.notice.set(null);
+    // Tiền không phụ thuộc địa chỉ nên preview vẫn đúng sau khi lưu địa chỉ mới.
+    if (this.addingAddress() && !(await this.saveAddress())) {
+      this.placing.set(false);
+      return;
+    }
     try {
       const order = await firstValueFrom(
         this.api.create(
