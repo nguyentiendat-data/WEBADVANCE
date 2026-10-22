@@ -26,6 +26,7 @@ const HIDE_AFTER_PX = 8;
   styleUrl: './compact-header.component.css',
   host: {
     '[class.hidden]': 'hidden()',
+    '[class.minimal]': 'minimal()',
     '(window:scroll)': 'onScroll()',
   },
 })
@@ -37,6 +38,8 @@ export class CompactHeaderComponent {
   readonly fallbackLink = input<string[]>(['/']);
   /** Chỉ hiện header khi trang ở trên cùng, cuộn xuống thì ẩn. */
   readonly hideOnScroll = input(false);
+  /** Trang thanh toán: thanh phẳng chỉ có "Quay lại" và logo, không dẫn khách ra khỏi luồng mua. */
+  readonly minimal = input(false);
 
   protected readonly hidden = signal(false);
   protected readonly cart = inject(CartStore);

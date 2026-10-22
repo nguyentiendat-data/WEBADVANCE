@@ -81,3 +81,28 @@
     gap: 12px;
   }
 }
+
+/* Bản tối giản (thanh toán): thanh phẳng toàn chiều ngang, viền dưới, "Quay lại" bên trái. */
+:host(.minimal) {
+  padding: 0;
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-gray-light);
+}
+:host(.minimal) .bar {
+  max-width: none;
+  min-height: 76px;
+  padding-inline: var(--page-gutter);
+  border-radius: 0;
+  box-shadow: none;
+}
+:host(.minimal) .back {
+  gap: 8px;
+  grid-auto-flow: column;
+  color: var(--color-muted);
+  font-size: var(--font-size-h4);
+}
+@media (max-width: 640px) {
+  :host(.minimal) .bar {
+    min-height: 60px;
+  }
+}
