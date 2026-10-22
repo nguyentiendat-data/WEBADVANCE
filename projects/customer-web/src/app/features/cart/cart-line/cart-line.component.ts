@@ -17,7 +17,7 @@ import { ToastService } from '../../../core/toast/toast.service';
 import { VndPipe } from '../../../shared/pipes/vnd.pipe';
 import { IconComponent } from '../../../shared/ui/icons/icon.component';
 import { QuantityStepperComponent } from '../../../shared/ui/quantity-stepper/quantity-stepper.component';
-import { isBlocking } from '../cart-rules';
+import { isBlocking, withQuantity } from '../cart-rules';
 
 /** Chờ khách bấm xong rồi mới gửi số lượng, tránh mỗi lần bấm một request. */
 const QUANTITY_DEBOUNCE_MS = 400;
@@ -45,7 +45,7 @@ export class CartLineComponent {
   /** Trang thanh toán ẩn ô chọn: dòng hiện ở đó đều đang được chọn. */
   readonly selectable = input(true);
 
-  /** Số lượng khách vừa bấm, chưa gửi lên server. */
+  /** Số lượng khách vừa bấm, chưa lưu xong; response của lần gửi trước không được kéo nó lùi lại. */
   private readonly pendingQuantity = signal<number | null>(null);
   protected readonly saving = signal(false);
   private timer: ReturnType<typeof setTimeout> | undefined;
@@ -72,15 +72,51 @@ export class CartLineComponent {
   });
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
+    // Rời trang khi chưa kịp gửi (ví dụ bấm Thanh toán ngay): vẫn lưu số khách đã chọn.
+    inject(DestroyRef).onDestroy(() => {
+      if (this.timer === undefined) return;
+      clearTimeout(this.timer);
+      const quantity = this.pendingQuantity();
+      if (quantity !== null) this.store.update(this.item().id, { quantity }).catch(() => undefined);
+    });
   }
 
+  /**
+   * Số lượng và tiền đổi ngay trên giao diện, không khóa dòng; server lưu sau khi khách ngừng bấm.
+   * Trang thanh toán tính tiền qua preview (đọc giỏ đã lưu) nên chỉ hiện số mới, không tạm tính.
+   */
   protected changeQuantity(value: number): void {
     this.pendingQuantity.set(value);
+    this.showTotals(value);
     clearTimeout(this.timer);
     this.timer = setTimeout(() => {
-      void this.save({ quantity: value }).finally(() => this.pendingQuantity.set(null));
+      this.timer = undefined;
+      void this.saveQuantity(value);
     }, QUANTITY_DEBOUNCE_MS);
+  }
+
+  private showTotals(quantity: number): void {
+    const cart = this.store.cart();
+    if (cart && this.selectable())
+      this.store.cart.set(withQuantity(cart, this.item().id, quantity));
+  }
+
+  private async saveQuantity(value: number): Promise<void> {
+    if (!this.selectable()) {
+      await this.save({ quantity: value });
+    } else {
+      try {
+        await this.store.update(this.item().id, { quantity: value });
+      } catch (err) {
+        // Lỗi của lần gửi cũ thì bỏ qua, lần gửi sau sẽ lưu số mới.
+        if (value !== this.pendingQuantity()) return;
+        this.toast.error(toApiError(err).message);
+        this.store.load();
+      }
+    }
+    const latest = this.pendingQuantity();
+    if (latest === value) this.pendingQuantity.set(null);
+    else if (latest !== null) this.showTotals(latest);
   }
 
   /** BR-C04: giảm về đúng số còn lại và chọn lại dòng trong một lần gửi. */
