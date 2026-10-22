@@ -1,3 +1,4 @@
+import { AppError } from '../../utils/app-error.js';
 import type { PaymentConfig, ShippingConfig } from '../config/config.service.js';
 import type { VariantDoc } from '../products/variant.model.js';
 
@@ -142,5 +143,64 @@ export function quotePayment(totalAmount: number, payment: PaymentConfig): Payme
     depositRate: payment.depositRate,
     depositAmount,
     codAmountIfDeposit: depositRequired ? totalAmount - depositAmount : 0,
+  };
+}
+
+export interface PaymentChoice {
+  method: PaymentMethod;
+  collectionType: 'FULL' | 'DEPOSIT';
+}
+
+export interface ResolvedPayment extends PaymentChoice {
+  /** Số tiền khách chuyển qua QR; 0 với COD. */
+  amountDue: number;
+  depositAmount: number;
+  /** Phần thu khi nhận hàng. */
+  codAmount: number;
+}
+
+/** Kiểm lựa chọn của khách theo spec mục 3.3; sai thì ném `AppError` như API Design 8.3. */
+export function resolvePayment(
+  totalAmount: number,
+  quote: PaymentQuote,
+  choice: PaymentChoice,
+): ResolvedPayment {
+  if (choice.method === 'COD' && quote.depositRequired) {
+    throw new AppError(
+      'DEPOSIT_REQUIRED',
+      409,
+      'Đơn trên ngưỡng phải đặt cọc hoặc trả trước qua QR',
+    );
+  }
+  if (!quote.methodsAvailable.includes(choice.method)) {
+    throw new AppError('PAYMENT_METHOD_DISABLED', 409, 'Phương thức thanh toán đang tạm khóa');
+  }
+  if (choice.method === 'COD') {
+    return {
+      method: 'COD',
+      collectionType: 'FULL',
+      amountDue: 0,
+      depositAmount: 0,
+      codAmount: totalAmount,
+    };
+  }
+  if (choice.collectionType === 'DEPOSIT') {
+    if (!quote.depositRequired) {
+      throw new AppError('VALIDATION_ERROR', 400, 'Chỉ đặt cọc với đơn trên ngưỡng');
+    }
+    return {
+      method: 'BANK_TRANSFER',
+      collectionType: 'DEPOSIT',
+      amountDue: quote.depositAmount,
+      depositAmount: quote.depositAmount,
+      codAmount: quote.codAmountIfDeposit,
+    };
+  }
+  return {
+    method: 'BANK_TRANSFER',
+    collectionType: 'FULL',
+    amountDue: totalAmount,
+    depositAmount: 0,
+    codAmount: 0,
   };
 }

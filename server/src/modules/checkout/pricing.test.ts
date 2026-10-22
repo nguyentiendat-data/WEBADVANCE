@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DEFAULT_CHECKOUT_CONFIG } from '../config/config.service.js';
-import { priceLines, quotePayment, resolveInstallation, type PricingInput } from './pricing.js';
+import {
+  priceLines,
+  quotePayment,
+  resolveInstallation,
+  resolvePayment,
+  type PricingInput,
+} from './pricing.js';
 
 const { shipping, payment } = DEFAULT_CHECKOUT_CONFIG;
 
@@ -106,4 +112,45 @@ test('lắp đặt theo installationService', () => {
   assert.equal(resolveInstallation('NONE', true), false);
   assert.equal(resolveInstallation('OPTIONAL', true), true);
   assert.equal(resolveInstallation('OPTIONAL', false), false);
+});
+
+test('chọn phương thức: COD dưới ngưỡng, cọc hoặc QR toàn bộ trên ngưỡng', () => {
+  const small = quotePayment(4_000_000, payment);
+  assert.deepEqual(resolvePayment(4_000_000, small, { method: 'COD', collectionType: 'DEPOSIT' }), {
+    method: 'COD',
+    collectionType: 'FULL',
+    amountDue: 0,
+    depositAmount: 0,
+    codAmount: 4_000_000,
+  });
+  assert.equal(
+    resolvePayment(4_000_000, small, { method: 'BANK_TRANSFER', collectionType: 'FULL' }).amountDue,
+    4_000_000,
+  );
+  assert.throws(
+    () => resolvePayment(4_000_000, small, { method: 'BANK_TRANSFER', collectionType: 'DEPOSIT' }),
+    { code: 'VALIDATION_ERROR' },
+  );
+
+  const big = quotePayment(30_000_000, payment);
+  assert.throws(() => resolvePayment(30_000_000, big, { method: 'COD', collectionType: 'FULL' }), {
+    code: 'DEPOSIT_REQUIRED',
+  });
+  const deposit = resolvePayment(30_000_000, big, {
+    method: 'BANK_TRANSFER',
+    collectionType: 'DEPOSIT',
+  });
+  assert.equal(deposit.amountDue, 9_000_000);
+  assert.equal(deposit.codAmount, 21_000_000);
+  assert.equal(
+    resolvePayment(30_000_000, big, { method: 'BANK_TRANSFER', collectionType: 'FULL' }).amountDue,
+    30_000_000,
+  );
+});
+
+test('phương thức bị tắt trong cấu hình thì từ chối', () => {
+  const quote = quotePayment(4_000_000, { ...payment, codEnabled: false });
+  assert.throws(() => resolvePayment(4_000_000, quote, { method: 'COD', collectionType: 'FULL' }), {
+    code: 'PAYMENT_METHOD_DISABLED',
+  });
 });

@@ -742,7 +742,8 @@ Response `200`:
 - `estimatedDeliveryDate` = hôm nay + số ngày chuẩn bị theo cấp cao nhất trong đơn (`shipping.leadDays`: cấp 1–2 là 3, cấp 3–4 là 5), chỉ đếm Thứ 2–Thứ 7. `schedulable = true` khi đơn có dòng cấp 3–4; khi `false` thì `delivery.scheduledDate` gửi lên là lỗi `SCHEDULE_INVALID`. Ngày hẹn trong [`minScheduleDate`, `maxScheduleDate`], không phải Chủ nhật.
 - `totalAmount = subtotal − promotionDiscount − voucherDiscount + shippingFee + installationFee`.
 - `depositRequired = true` khi **thanh toán > 20.000.000đ** (ngưỡng từ cấu hình): cọc 30% qua QR, còn lại COD; khách vẫn có thể chọn trả toàn bộ qua QR.
-- `blockingIssues`: `OUT_OF_STOCK`, `EXCEEDS_STOCK`, `VARIANT_UNAVAILABLE`, `VOUCHER_INVALID`, `ADDRESS_REQUIRED`, `SCHEDULE_INVALID`. `POST /orders` sẽ từ chối nếu còn issue.
+- `blockingIssues`: mảng `{ code, variantId?, available? }` với `code` là `NO_ITEMS` (giỏ không có dòng nào được chọn), `OUT_OF_STOCK`, `EXCEEDS_STOCK` (kèm `available`), `VARIANT_UNAVAILABLE`, `VOUCHER_INVALID`, `ADDRESS_REQUIRED`, `SCHEDULE_INVALID`. `POST /orders` sẽ từ chối nếu còn issue (`409 INSUFFICIENT_STOCK` / `VARIANT_UNAVAILABLE`, `400 ADDRESS_REQUIRED` / `SCHEDULE_INVALID`, kèm `details.preview`).
+- Mỗi dòng trong `items` có thêm `cartItemId` (nguồn `CART`, để sửa qua API giỏ), `product`, `variant` giống dòng giỏ (mục 7.2). Response có thêm `address` (địa chỉ sẽ giao: `addressId`, `newAddress` hoặc địa chỉ mặc định).
 
 ### 8.3. `POST /orders`
 
@@ -793,14 +794,16 @@ Response `201`:
 }
 ```
 
-QR sinh riêng cho từng đơn: đúng số tiền (`depositAmount` nếu cọc) và `payment.transferContent` duy nhất. Với COD, `qr = null`.
+QR sinh riêng cho từng đơn: đúng số tiền (`depositAmount` nếu cọc) và `payment.transferContent` duy nhất. Với COD, `qr = null`. Gửi lại cùng `Idempotency-Key` trả `200` với đơn đã tạo.
 
 ### 8.4. Thanh toán QR
 
 `GET /orders/:id/payment` (frontend polling mỗi 3–5 giây, hoặc nhận socket `order:payment-updated`):
 
+Response cùng cấu trúc `POST /orders` (để mở lại trang QR khi khách quay lại), thêm `paid` và `expired`:
+
 ```json
-{ "data": { "status": "PENDING", "orderStatus": "PENDING_PAYMENT", "secondsRemaining": 612, "paid": false, "expired": false } }
+{ "data": { "id": "671...", "orderCode": "CV261017-0001", "status": "PENDING_PAYMENT", "source": "CART", "totalAmount": 14350000, "payment": { "status": "PENDING", "amountDue": 14350000, "secondsRemaining": 612, "qr": { } }, "paid": false, "expired": false } }
 ```
 
 Khi hết hạn: `expired = true`, `orderStatus = CANCELLED` (job hệ thống tự hủy, `cancellation.cancelledBy = SYSTEM`, trả tồn kho, hoàn lượt voucher, trả các dòng lại vào giỏ nếu `source = CART`) và frontend đưa khách về trang trước (giỏ hàng với nguồn `CART`).
