@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { addressRoutes } from './addresses/address.routes.js';
 import { bannerRoutes } from './banners/banner.routes.js';
 import { cartRoutes } from './cart/cart.routes.js';
 import { categoryRoutes } from './categories/category.routes.js';
@@ -22,3 +23,4 @@ apiRoutes.use('/inspirations', inspirationRoutes);
 apiRoutes.use('/products', productRoutes);
 apiRoutes.use('/promotions', promotionRoutes);
 apiRoutes.use('/showrooms', showroomRoutes);
+apiRoutes.use('/users/me/addresses', addressRoutes);
