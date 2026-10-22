@@ -179,9 +179,11 @@ async function getOrCreateCart(userId: Types.ObjectId) {
  * thì tự bỏ chọn và lưu lại.
  */
 async function buildView(cart: CartDocument | null): Promise<CartView> {
-  const config = await getCheckoutConfig();
   const items = cart?.items ?? [];
-  const contexts = await loadLineContexts(items.map((i) => i.variantId));
+  const [config, contexts] = await Promise.all([
+    getCheckoutConfig(),
+    loadLineContexts(items.map((i) => i.variantId)),
+  ]);
 
   // ponytail: dòng mất dữ liệu biến thể/sản phẩm hoặc thiếu cấp vận chuyển bị ẩn khỏi giỏ;
   // dữ liệu ACTIVE luôn có cấp (PA-04) nên chỉ gặp khi dữ liệu hỏng.
