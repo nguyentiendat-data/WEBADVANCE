@@ -108,7 +108,10 @@ function assertSelectable(ctx: LineContext | undefined, quantity: number): void 
   assertStock(ctx, quantity, quantity);
 }
 
-function toPricingInput(ctx: LineContext, item: CartItem): PricingInput {
+export function toPricingInput(
+  ctx: LineContext,
+  item: Pick<CartItem, 'quantity' | 'hasInstallation'>,
+): PricingInput {
   return {
     variantId: ctx.variant._id.toString(),
     quantity: item.quantity,
@@ -130,12 +133,37 @@ function setSelected(item: { set(path: string, value: unknown): unknown }, value
   item.set('isSelected', value);
 }
 
-function isItemSelected(item: { get(path: string): unknown }): boolean {
+export function isItemSelected(item: { get(path: string): unknown }): boolean {
   return item.get('isSelected') === true;
 }
 
 function formatDimensions(d: VariantDoc['dimensions']): string | null {
   return d?.length && d.width && d.height ? `${d.length}x${d.width}x${d.height}` : null;
+}
+
+/** Thông tin hiển thị của một dòng, dùng chung cho giỏ và trang thanh toán. */
+export function lineDisplay({
+  product,
+  variant,
+}: LineContext): Pick<CartItemView, 'product' | 'variant'> {
+  return {
+    product: {
+      id: product._id.toString(),
+      name: product.name,
+      slug: product.slug,
+      thumbnail: pickThumbnail(product),
+    },
+    variant: {
+      sku: variant.sku,
+      originalPrice: variant.originalPrice,
+      color: variant.color ?? null,
+      material: variant.material ?? null,
+      dimensions: formatDimensions(variant.dimensions),
+      stockStatus: variantStockStatus(variant),
+      installationService: variant.installationService,
+      unitInstallationFee: variant.installationFee ?? 0,
+    },
+  };
 }
 
 async function getOrCreateCart(userId: Types.ObjectId) {
@@ -186,7 +214,7 @@ async function buildView(cart: CartDocument | null): Promise<CartView> {
     id: cart?._id.toString() ?? null,
     items: rows.map(({ item, ctx, warnings }, i): CartItemView => {
       const line = priced.items[i]!;
-      const { variant, product } = ctx;
+      const { variant } = ctx;
       return {
         id: item._id.toString(),
         variantId: variant._id.toString(),
@@ -194,22 +222,7 @@ async function buildView(cart: CartDocument | null): Promise<CartView> {
         quantity: item.quantity,
         hasInstallation: item.hasInstallation,
         note: item.note ?? null,
-        product: {
-          id: product._id.toString(),
-          name: product.name,
-          slug: product.slug,
-          thumbnail: pickThumbnail(product),
-        },
-        variant: {
-          sku: variant.sku,
-          originalPrice: variant.originalPrice,
-          color: variant.color ?? null,
-          material: variant.material ?? null,
-          dimensions: formatDimensions(variant.dimensions),
-          stockStatus: variantStockStatus(variant),
-          installationService: variant.installationService,
-          unitInstallationFee: variant.installationFee ?? 0,
-        },
+        ...lineDisplay(ctx),
         priceAtAdd: item.priceAtAdd,
         currentPrice: ctx.finalPrice,
         pricing: line.pricing,
