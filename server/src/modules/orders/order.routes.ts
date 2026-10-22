@@ -20,6 +20,7 @@ import {
 import {
   cancelByCustomer,
   createOrder,
+  getOrderDetail,
   getOrderPayment,
   rescheduleDelivery,
 } from './order.service.js';
@@ -42,6 +43,13 @@ orderRoutes.post(
     const { created, view } = await createOrder(userId(res), key.data, body);
     res.status(created ? 201 : 200);
     sendData(res, view);
+  }),
+);
+
+orderRoutes.get(
+  '/:orderId',
+  asyncHandler(async (req, res) => {
+    sendData(res, await getOrderDetail(userId(res), toObjectId(String(req.params['orderId']))));
   }),
 );
 

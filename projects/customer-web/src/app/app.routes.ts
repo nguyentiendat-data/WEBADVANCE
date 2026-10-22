@@ -15,6 +15,11 @@ export const routes: Routes = [
     path: 'cart',
     loadChildren: () => import('./features/cart/cart.routes').then((m) => m.CART_ROUTES),
   },
-  // Các trang chưa làm (sản phẩm, tìm kiếm, thanh toán...) tạm đưa về trang chủ.
+  {
+    path: 'checkout',
+    loadChildren: () =>
+      import('./features/checkout/checkout.routes').then((m) => m.CHECKOUT_ROUTES),
+  },
+  // Các trang chưa làm (sản phẩm, tìm kiếm, tài khoản...) tạm đưa về trang chủ.
   { path: '**', redirectTo: '' },
 ];

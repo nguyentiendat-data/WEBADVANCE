@@ -31,6 +31,7 @@ const QUANTITY_DEBOUNCE_MS = 400;
   host: {
     '[class.saving]': 'saving()',
     '[class.inactive]': 'inactive()',
+    '[class.no-select]': '!selectable()',
   },
 })
 export class CartLineComponent {
@@ -39,6 +40,8 @@ export class CartLineComponent {
   private readonly picker = inject(VariantPickerService);
 
   readonly item = input.required<CartItem>();
+  /** Trang thanh toán ẩn ô chọn: dòng hiện ở đó đều đang được chọn. */
+  readonly selectable = input(true);
 
   /** Số lượng khách vừa bấm, chưa gửi lên server. */
   private readonly pendingQuantity = signal<number | null>(null);

@@ -1,14 +1,16 @@
 @let line = item();
 <div class="line">
-  <input
-    #selectBox
-    type="checkbox"
-    class="select"
-    [checked]="line.isSelected"
-    [disabled]="blocked() || saving()"
-    [attr.aria-label]="'Chọn ' + line.product.name + ' để thanh toán'"
-    (change)="toggleSelected(selectBox)"
-  />
+  @if (selectable()) {
+    <input
+      #selectBox
+      type="checkbox"
+      class="select"
+      [checked]="line.isSelected"
+      [disabled]="blocked() || saving()"
+      [attr.aria-label]="'Chọn ' + line.product.name + ' để thanh toán'"
+      (change)="toggleSelected(selectBox)"
+    />
+  }
 
   <a class="thumb" [routerLink]="['/products', line.product.slug]">
     <img [src]="line.product.thumbnail" [alt]="line.product.name" loading="lazy" />

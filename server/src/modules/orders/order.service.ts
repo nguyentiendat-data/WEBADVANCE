@@ -587,3 +587,69 @@ export async function rescheduleDelivery(
     rescheduleCount: shipment.rescheduleCount,
   };
 }
+
+/** API Design 3.1 (rút gọn): chi tiết đơn cho trang thành công; FR-10 bổ sung `items[].actions`. */
+export async function getOrderDetail(userId: Types.ObjectId, orderId: Types.ObjectId) {
+  const order = await findOwnOrder(userId, orderId);
+  const [shipment, { shipping }] = await Promise.all([
+    ShipmentModel.findOne({ orderId }).lean(),
+    getCheckoutConfig(),
+  ]);
+  const open = CUSTOMER_CANCELLABLE.includes(order.status);
+  const day = (d?: Date | null): DateOnly | null => (d ? fromDate(d) : null);
+  return {
+    id: order._id.toString(),
+    orderCode: order.orderCode,
+    status: order.status,
+    source: order.source,
+    createdAt: order.createdAt.toISOString(),
+    shippingAddress: order.shippingAddress,
+    items: order.items.map((i) => ({
+      id: i._id.toString(),
+      variantId: i.variantId.toString(),
+      snapshot: i.snapshot,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+      promotionDiscount: i.promotionDiscount,
+      finalAmount: i.finalAmount,
+      hasInstallation: i.hasInstallation,
+      installationFee: i.installationFee,
+      shippingFee: i.shippingFee,
+    })),
+    subtotal: order.subtotal,
+    promotionDiscount: order.promotionDiscount,
+    voucherDiscount: order.voucherDiscount,
+    shippingFee: order.shippingFee,
+    installationFee: order.installationFee,
+    totalAmount: order.totalAmount,
+    note: order.note ?? null,
+    payment: {
+      method: order.payment.method,
+      collectionType: order.payment.collectionType,
+      status: order.payment.status,
+      depositAmount: order.payment.depositAmount ?? 0,
+      codAmount: order.payment.codAmount ?? 0,
+      dueAt: order.payment.dueAt?.toISOString() ?? null,
+      paidAt: order.payment.paidAt?.toISOString() ?? null,
+    },
+    shipment: shipment && {
+      status: shipment.status,
+      estimatedDeliveryDate: day(shipment.estimatedDeliveryDate),
+      scheduledDate: day(shipment.scheduledDate),
+      scheduledSlot: shipment.scheduledSlot ?? null,
+    },
+    invoiceInfo: order.invoiceInfo,
+    cancellation: order.cancellation?.cancelledAt ? order.cancellation : null,
+    allowedActions: {
+      canCancel: open,
+      canReschedule:
+        open &&
+        !!shipment &&
+        shipment.rescheduleCount < shipping.maxReschedule &&
+        isSchedulable(
+          order.items.map((i) => i.shippingTier),
+          shipping,
+        ),
+    },
+  };
+}

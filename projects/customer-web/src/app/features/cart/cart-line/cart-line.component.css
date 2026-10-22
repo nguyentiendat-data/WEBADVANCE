@@ -20,6 +20,10 @@
   align-items: start;
 }
 
+:host(.no-select) .line {
+  grid-template-columns: 104px minmax(0, 1fr);
+}
+
 .select {
   width: 20px;
   height: 20px;
