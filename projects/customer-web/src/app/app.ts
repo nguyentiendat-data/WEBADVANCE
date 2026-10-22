@@ -5,16 +5,27 @@ import { filter, map } from 'rxjs';
 import { FloatingActionsComponent } from './layout/floating-actions/floating-actions.component';
 import { FooterComponent } from './layout/footer/footer.component';
 import { HeaderComponent } from './layout/header/header.component';
+import { ToastComponent } from './layout/toast/toast.component';
+import { VariantPickerService } from './core/cart/variant-picker.service';
+import { VariantPickerComponent } from './shared/ui/variant-picker/variant-picker.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, HeaderComponent, FooterComponent, FloatingActionsComponent],
+  imports: [
+    RouterOutlet,
+    HeaderComponent,
+    FooterComponent,
+    FloatingActionsComponent,
+    VariantPickerComponent,
+    ToastComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App {
   private readonly router = inject(Router);
+  protected readonly picker = inject(VariantPickerService);
 
   /** Route khai báo `data: { layout: 'compact' }` tự hiển thị header riêng, ẩn header và nút nổi chung. */
   protected readonly compact = toSignal(

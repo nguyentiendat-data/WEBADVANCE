@@ -8,3 +8,7 @@
 @if (!compact()) {
   <app-floating-actions />
 }
+@if (picker.request(); as request) {
+  <app-variant-picker [request]="request" />
+}
+<app-toast />

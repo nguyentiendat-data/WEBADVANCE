@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { CartStore } from '../../core/cart/cart.store';
 import { IconComponent } from '../../shared/ui/icons/icon.component';
 
 /** Cuộn quá ngưỡng này (px) thì ẩn header khi bật `hideOnScroll`. */
@@ -38,11 +39,13 @@ export class CompactHeaderComponent {
   readonly hideOnScroll = input(false);
 
   protected readonly hidden = signal(false);
+  protected readonly cart = inject(CartStore);
 
   // Header được tạo trong lúc điều hướng vào trang, nên đây là lần điều hướng đã mở trang này.
   private readonly hasPreviousPage = !!this.router.getCurrentNavigation()?.previousNavigation;
 
   constructor() {
+    this.cart.ensureLoaded();
     // Trang có thể mở ở vị trí đã cuộn (khôi phục cuộn khi Back), nên tính ngay lần đầu.
     afterNextRender(() => this.onScroll());
   }

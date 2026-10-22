@@ -135,6 +135,69 @@ ul {
   padding-inline: var(--page-gutter);
 }
 
+/* Nút dùng chung: chính (nền màu brand) và viền (như nút trên thẻ sản phẩm). */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--color-black);
+  border-radius: 3px;
+  background: var(--color-white);
+  font-size: var(--font-size-h5);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.btn--primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+.btn--primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary) 85%, var(--color-black));
+}
+.btn--outline:hover:not(:disabled) {
+  background: var(--color-black);
+  color: var(--color-white);
+}
+.btn:disabled {
+  cursor: not-allowed;
+  border-color: var(--color-gray-light);
+  background: var(--color-gray-light);
+  color: var(--color-muted);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Số dòng trong giỏ trên icon giỏ hàng (header và header rút gọn). */
+.cart-link {
+  position: relative;
+}
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-white);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 18px;
+  text-align: center;
+}
+
+input[type='checkbox'] {
+  accent-color: var(--color-primary);
+}
+
 /* Ẩn khỏi màn hình nhưng trình đọc màn hình vẫn đọc được. */
 .sr-only {
   position: absolute;

@@ -33,6 +33,8 @@ export interface CartItemView {
   product: { id: string; name: string; slug: string; thumbnail: string };
   variant: {
     sku: string;
+    /** Giá gốc niêm yết, gạch ngang giống thẻ sản phẩm. */
+    originalPrice: number;
     color: string | null;
     material: string | null;
     dimensions: string | null;
@@ -200,6 +202,7 @@ async function buildView(cart: CartDocument | null): Promise<CartView> {
         },
         variant: {
           sku: variant.sku,
+          originalPrice: variant.originalPrice,
           color: variant.color ?? null,
           material: variant.material ?? null,
           dimensions: formatDimensions(variant.dimensions),

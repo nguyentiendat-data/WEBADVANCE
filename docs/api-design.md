@@ -664,7 +664,7 @@ Mọi field tùy chọn, gửi field nào đổi field đó:
       "id": "itemId", "variantId": "...", "isSelected": true, "quantity": 1,
       "hasInstallation": true, "note": null,
       "product": { "id": "...", "name": "Sofa Oslo", "slug": "...", "thumbnail": "..." },
-      "variant": { "sku": "100.001.01", "color": "Xám", "material": "Vải", "dimensions": "220x95x85", "stockStatus": "IN_STOCK", "installationService": "OPTIONAL", "unitInstallationFee": 300000 },
+      "variant": { "sku": "100.001.01", "originalPrice": 16000000, "color": "Xám", "material": "Vải", "dimensions": "220x95x85", "stockStatus": "IN_STOCK", "installationService": "OPTIONAL", "unitInstallationFee": 300000 },
       "priceAtAdd": 15000000, "currentPrice": 14000000,
       "pricing": { "unitPrice": 14000000, "promotionId": null, "promotionDiscount": 0, "lineTotal": 14000000 },
       "shippingTier": 3, "shippingFee": 250000, "installationFee": 300000,
@@ -1313,7 +1313,7 @@ Những chỗ này contract đã đề xuất cách xử lý, cần nhóm đồn
 | 1.5 | 2026-10-20 | Trang chủ: định nghĩa response `GET /inspirations/:id` cho popup Shop by look |
 | 1.6 | 2026-10-21 | Fit your home: mở rộng response `POST /fit-your-home/check` (`status`, `details[]` có `posture`, `minClearanceCm`, `note`, `usedDimensions`), thêm `POST /fit-your-home/similar` |
 | 1.7 | 2026-10-21 | Giỏ hàng và thanh toán (`cart-checkout-spec.md`): chặn vượt tồn ở `/cart*` (`INSUFFICIENT_STOCK`, cảnh báo `EXCEEDS_STOCK`), lắp đặt chỉ cấp 3–4 và tính theo số lượng, voucher không giảm phí, ngày giao dự kiến theo `leadDays`, hẹn lịch chỉ đơn có hàng cấp 3–4 (`schedulable`), `POST /orders` thêm `expectedTotal` (`PRICE_CHANGED`) và `invoiceInfo` (FR-45), lưu `orders.source` và trả dòng vào giỏ khi đơn từ giỏ bị hủy lúc chờ thanh toán, gửi email hóa đơn khi khách chọn |
-| 1.8 | 2026-10-21 | `GET /cart`: thêm `variant.sku`, `variant.installationService`, `variant.unitInstallationFee`; ghi rõ `priceAtAdd`/`currentPrice` là giá sau khuyến mãi; `GET /config/public` đã trả `payment`, `shipping`, `invoice` |
+| 1.8 | 2026-10-21 | `GET /cart`: thêm `variant.sku`, `variant.originalPrice` (giá gốc gạch ngang như thẻ sản phẩm), `variant.installationService`, `variant.unitInstallationFee`; ghi rõ `priceAtAdd`/`currentPrice` là giá sau khuyến mãi; `GET /config/public` đã trả `payment`, `shipping`, `invoice` |
 
 ---
 

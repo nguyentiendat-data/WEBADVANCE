@@ -11,6 +11,10 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/fit-your-home/fit-your-home.routes').then((m) => m.FIT_YOUR_HOME_ROUTES),
   },
-  // Các trang chưa làm (sản phẩm, tìm kiếm, giỏ hàng...) tạm đưa về trang chủ.
+  {
+    path: 'cart',
+    loadChildren: () => import('./features/cart/cart.routes').then((m) => m.CART_ROUTES),
+  },
+  // Các trang chưa làm (sản phẩm, tìm kiếm, thanh toán...) tạm đưa về trang chủ.
   { path: '**', redirectTo: '' },
 ];
