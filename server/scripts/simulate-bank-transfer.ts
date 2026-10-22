@@ -1,7 +1,7 @@
 // Mô phỏng ngân hàng báo tiền về (dev/demo QR, spec mục 5).
 // Dùng: npm run bank:simulate -- <nội dung CK> <số tiền> [mã giao dịch]
 // Ví dụ: npm run bank:simulate -- CV261017-0001-K7Q2 14350000
-import 'dotenv/config';
+import { config } from '../src/config/index.js';
 
 const [content, amount, code] = process.argv.slice(2);
 if (!content || !amount) {
@@ -10,12 +10,12 @@ if (!content || !amount) {
 }
 
 async function main(): Promise<void> {
-  const base = process.env['API_URL'] ?? `http://localhost:${process.env['PORT'] ?? 3000}`;
+  const base = `http://localhost:${config.port}`;
   const res = await fetch(`${base}/api/v1/webhooks/bank-transfer`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Webhook-Secret': process.env['BANK_WEBHOOK_SECRET'] ?? '',
+      'X-Webhook-Secret': config.bankWebhookSecret,
     },
     body: JSON.stringify({
       transactionCode: code ?? `FT${Date.now()}`,

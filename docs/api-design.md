@@ -361,6 +361,8 @@ Response `200` (rút gọn):
 }
 ```
 
+> **Đã code (bản rút gọn cho trang Đặt hàng thành công):** chưa có `items[].actions`, `statusHistory`; có thêm `source`, `note`, `invoiceInfo`, `payment.depositAmount`, `payment.codAmount`. `shipment` chỉ có `status`, `estimatedDeliveryDate`, `scheduledDate`, `scheduledSlot` (ngày dạng `YYYY-MM-DD`). Bổ sung phần còn lại khi làm FR-10.
+
 Các cờ `actions.*` do backend tính (frontend không tự tính hạn): `canReview` = `DELIVERED` và trong 90 ngày kể từ `actualDeliveryDate` và dòng chưa có đánh giá (kể cả đã `DELETED`). `canReturn` = trong 7 ngày kể từ `actualDeliveryDate`. Số ngày lấy từ `system_configs`.
 
 ### 3.2. `POST /orders/:orderId/items/:orderItemId/reviews` (multipart hoặc JSON)
@@ -810,7 +812,7 @@ Khi hết hạn: `expired = true`, `orderStatus = CANCELLED` (job hệ thống t
 
 **Trả dòng vào giỏ** (đơn `source = CART` bị hủy khi đang `PENDING_PAYMENT`, do hết hạn hoặc khách hủy): mỗi dòng đơn thêm lại vào giỏ với `variantId`, `quantity`, `hasInstallation`, `isSelected = true`; trùng biến thể thì cộng dồn. Không kiểm vượt tồn ở bước này (tồn kho vừa được trả lại); nếu vượt thì dòng mang cảnh báo `EXCEEDS_STOCK` như mục 7.2.
 
-**Webhook `POST /webhooks/bank-transfer`** (xác thực chữ ký/secret của nhà cung cấp, từ chối nếu sai):
+**Webhook `POST /webhooks/bank-transfer`** (xác thực chữ ký/secret của nhà cung cấp, từ chối nếu sai; bản mô phỏng dùng header `X-Webhook-Secret` = biến môi trường `BANK_WEBHOOK_SECRET`, sai trả `401`):
 
 ```json
 { "transactionCode": "FT26290xxxx", "amount": 14350000, "content": "CV261017-0001-K7Q2", "transactionAt": "2026-10-17T10:07:00.000Z" }
@@ -1317,6 +1319,7 @@ Những chỗ này contract đã đề xuất cách xử lý, cần nhóm đồn
 | 1.6 | 2026-10-21 | Fit your home: mở rộng response `POST /fit-your-home/check` (`status`, `details[]` có `posture`, `minClearanceCm`, `note`, `usedDimensions`), thêm `POST /fit-your-home/similar` |
 | 1.7 | 2026-10-21 | Giỏ hàng và thanh toán (`cart-checkout-spec.md`): chặn vượt tồn ở `/cart*` (`INSUFFICIENT_STOCK`, cảnh báo `EXCEEDS_STOCK`), lắp đặt chỉ cấp 3–4 và tính theo số lượng, voucher không giảm phí, ngày giao dự kiến theo `leadDays`, hẹn lịch chỉ đơn có hàng cấp 3–4 (`schedulable`), `POST /orders` thêm `expectedTotal` (`PRICE_CHANGED`) và `invoiceInfo` (FR-45), lưu `orders.source` và trả dòng vào giỏ khi đơn từ giỏ bị hủy lúc chờ thanh toán, gửi email hóa đơn khi khách chọn |
 | 1.8 | 2026-10-21 | `GET /cart`: thêm `variant.sku`, `variant.originalPrice` (giá gốc gạch ngang như thẻ sản phẩm), `variant.installationService`, `variant.unitInstallationFee`; ghi rõ `priceAtAdd`/`currentPrice` là giá sau khuyến mãi; `GET /config/public` đã trả `payment`, `shipping`, `invoice` |
+| 1.9 | 2026-10-22 | Giỏ hàng và thanh toán (đã code): `/users/me/addresses` có `GET`, `POST`, `PATCH` (chưa có `DELETE`); `POST /checkout/preview` trả `blockingIssues` dạng object, thêm mã `NO_ITEMS`, `items[].cartItemId/product/variant` và `address`; `POST /orders` gửi lại cùng `Idempotency-Key` trả `200`, lỗi chặn kèm `details.preview`; `GET /orders/:id/payment` cùng cấu trúc `POST /orders` thêm `paid`, `expired`; `GET /orders/:id` bản rút gọn; webhook xác thực bằng `X-Webhook-Secret`; body không phải JSON trả `400 VALIDATION_ERROR` |
 
 ---
 

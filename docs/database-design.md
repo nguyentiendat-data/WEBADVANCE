@@ -397,7 +397,7 @@ Collection: `orders` (trước đây: `DONHANG`, kèm `CHI_TIET_DON_HANG`, `LICH
 | # | Thuộc tính | Kiểu dữ liệu | Bắt buộc | Ràng buộc / Mô tả |
 |---|---|---|---|---|
 | 1 | _id | ObjectId | Y | Mã định danh của đơn hàng, do MongoDB tự sinh |
-| 2 | orderCode | String | Y | Unique. Mã đơn dễ đọc để khách và Admin tra cứu |
+| 2 | orderCode | String | Y | Unique. Mã đơn dễ đọc để khách và Admin tra cứu: `CV` + ngày (giờ VN, `YYMMDD`) + số thứ tự 4 chữ số trong ngày, lấy từ collection phụ `counters` (`_id: "order:YYMMDD"`, `seq`) |
 | 3 | userId | ObjectId (ref: users) | Y | Khách hàng đặt đơn |
 | 4 | voucherId | ObjectId (ref: vouchers) | | Voucher áp dụng (nếu có) |
 | 5 | shippingAddress.recipientName | String | Y | Bản sao tên người nhận lúc đặt |
@@ -461,6 +461,7 @@ Collection: `orders` (trước đây: `DONHANG`, kèm `CHI_TIET_DON_HANG`, `LICH
 | 63 | invoiceInfo.address | String | | Địa chỉ ghi trên hóa đơn. Bắt buộc khi `type` khác `NONE` |
 | 64 | invoiceInfo.sendEmail | Boolean | | Default: false. Khách chọn nhận hóa đơn qua email (chỉ khi `type` khác `NONE`) |
 | 65 | invoiceInfo.email | String | | Email nhận hóa đơn, bắt buộc khi `sendEmail = true` |
+| 66 | idempotencyKey | String | Y | Header `Idempotency-Key` của `POST /orders`. Unique theo (`userId`, `idempotencyKey`): gửi lại cùng key trả lại đơn cũ (NF-08) |
 
 ### Thực thể 18: Giao dịch thanh toán (PaymentTransaction)
 

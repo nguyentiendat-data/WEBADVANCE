@@ -466,6 +466,11 @@ Compact header (logo + Thanh toán an toàn)
 | 8 | Hẹn lịch giao | Làm trong feature, chỉ đơn có hàng cấp 3–4; ngày dự kiến 3/5 ngày làm việc (mục 1.3) |
 | 9 | Điểm vào | Popup chọn biến thể |
 | 10 | Hóa đơn VAT | 3 lựa chọn + ô tick gửi email (mục 1.4, FR-45) |
+| 11 | Cập nhật trạng thái thanh toán QR | Polling `GET /orders/:id/payment` mỗi 5 giây, chưa dùng Socket.IO |
+| 12 | Job hết hạn thanh toán | `setInterval` mỗi phút trong `worker.ts` (chưa dùng BullMQ); `GET /orders/:id/payment` cũng tự hủy đơn quá hạn |
+| 13 | Thêm địa chỉ ở trang thanh toán | Địa chỉ mới luôn được lưu vào sổ địa chỉ (bỏ ô "Lưu vào sổ địa chỉ"); API vẫn nhận `newAddress` + `saveAddress` |
+| 14 | Lý do hủy đơn ở trang QR | `CHANGED_MIND`, `WRONG_ORDER`, `PAYMENT_TROUBLE`, `OTHER` (lưu kèm câu mô tả vào `cancellation.reason`) |
+| 15 | Mua nhanh tại trang thanh toán | Sửa số lượng và lắp đặt; đổi biến thể làm sau (nguồn giỏ đổi được qua popup) |
 
 ---
 
@@ -474,5 +479,20 @@ Compact header (logo + Thanh toán an toàn)
 1. **Backend giỏ**: model `carts`, `GET/POST/PATCH/DELETE /cart*`, `PATCH /cart/selection`; hàm tính tiền dùng chung; middleware user dev.
 2. **Frontend giỏ**: `CartService` (signal), popup chọn biến thể, trang `/cart`, badge header, nối nút trên `product-card`.
 3. **Backend đặt hàng**: `addresses` tối thiểu, `POST /checkout/preview`, `POST /orders` (transaction + idempotency + trả giỏ khi hủy), `GET /orders/:id/payment`, `POST /orders/:id/cancel`, `PATCH /orders/:id/delivery-schedule`, webhook + script mô phỏng, job hết hạn thanh toán.
-4. **Frontend thanh toán**: `/checkout` (2 nguồn, địa chỉ, hẹn lịch, hóa đơn, phương thức), `/checkout/payment/:id` (socket + polling), `/checkout/success/:id`.
+4. **Frontend thanh toán**: `/checkout` (2 nguồn, địa chỉ, hẹn lịch, hóa đơn, phương thức), `/checkout/payment/:id` (polling), `/checkout/success/:id`.
+Bước 1–4 đã xong trên nhánh `feature/cart` (2026-10-22).
+
 5. **Làm sau**: voucher, UI đổi lịch và sửa thông tin hóa đơn ở trang chi tiết đơn, gửi email hóa đơn (cùng job phát hành hóa đơn).
+
+---
+
+## 8. Chạy thử và demo
+
+1. `.env` cần `MONGODB_URI`, `BANK_WEBHOOK_SECRET` (chuỗi bất kỳ) và tùy chọn `DEV_USER_ID` (chưa có đăng nhập, mọi request của khách coi là user này; chặn ở production).
+2. Chạy `npm run dev:server`, `npm run dev:worker` (hủy đơn quá hạn mỗi phút) và `npm run start:customer`.
+3. Thêm sản phẩm vào giỏ hoặc bấm Mua ngay trên thẻ sản phẩm → Thanh toán → Đặt hàng.
+4. Đơn QR: lấy nội dung chuyển khoản và số tiền trên trang QR rồi chạy
+   `npm run bank:simulate -- <nội dung CK> <số tiền>`. Trang QR tự chuyển sang Thanh toán thành công trong vòng 5 giây. Gửi sai số tiền hoặc sai nội dung để thử các trường hợp đối soát (`UNDERPAID`, `OVERPAID`, `WRONG_CONTENT`).
+5. Test: `npm run test:server` (tính tiền, ngày giao, phương thức thanh toán, đối chiếu chuyển khoản) và `npm run test:web` (quy tắc trang thanh toán).
+
+Lưu ý: `npm run seed` xóa sạch các collection; không chạy vào database dùng chung của nhóm.
