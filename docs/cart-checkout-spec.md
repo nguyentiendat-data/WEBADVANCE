@@ -164,9 +164,9 @@ sequenceDiagram
 ### 3.2. Luồng nghiệp vụ đặt hàng
 
 1. **Vào trang thanh toán** → `POST /checkout/preview`. Server tính lại toàn bộ (giá, khuyến mãi, phí, cọc, ngày giao dự kiến, có được hẹn lịch không) và trả `blockingIssues`. Không tạo đơn, không giữ hàng. Giỏ không có dòng nào được chọn / mất đơn tạm mua nhanh → quay về `/cart` hoặc trang chủ.
-2. **Địa chỉ giao hàng** (FR-33): mặc định chọn địa chỉ mặc định. Chưa có địa chỉ → form thêm mới mở sẵn, tùy chọn "Lưu vào sổ địa chỉ".
-3. **Sản phẩm và lắp đặt** (FR-34, FR-35): sửa số lượng (không vượt tồn), biến thể, lắp đặt, xóa dòng ngay tại trang. Mỗi thay đổi gọi lại `preview`.
-4. **Giao hàng** (FR-36): hiển thị ngày dự kiến. Đơn có hàng cấp 3–4: tùy chọn hẹn ngày + khung giờ. Ghi chú giao hàng (tối đa 500 ký tự).
+2. **Địa chỉ giao hàng** (FR-33): mặc định chọn địa chỉ mặc định. Chưa có địa chỉ → form thêm mới mở sẵn (Tỉnh/Thành phố và Phường/Xã chọn từ danh sách sau sáp nhập 2025, không có cấp huyện). Địa chỉ mới được lưu vào sổ khi bấm Thanh toán, kèm tùy chọn "Đặt làm địa chỉ mặc định". Ô Ghi chú (tối đa 500 ký tự) nằm cuối mục, lưu thành ghi chú giao hàng của đơn.
+3. **Sản phẩm và lắp đặt** (FR-34, FR-35): sản phẩm chỉ hiển thị ở cột tóm tắt; sửa số lượng hoặc biến thể thì quay lại giỏ. Chọn lắp đặt (hàng `OPTIONAL`) ở mục Giao hàng và lắp đặt, mỗi thay đổi gọi lại `preview`.
+4. **Giao hàng** (FR-36): hiển thị ngày dự kiến. Đơn có hàng cấp 3–4: tùy chọn hẹn ngày + khung giờ.
 5. **Hóa đơn** (FR-45): chọn Không cần / Cá nhân / Công ty, nhập thông tin, tick gửi email nếu muốn.
 6. **Phương thức thanh toán** (FR-38, FR-39) – xem 3.3.
 7. **Đặt hàng**: `POST /orders` kèm `Idempotency-Key` (sinh một lần khi vào trang, giữ nguyên khi bấm lại) và `expectedTotal` (tổng khách đang thấy). Server trong 1 transaction: kiểm lại giá (so `expectedTotal`), tồn kho, voucher → trừ tồn kho → tạo đơn (lưu `source`, `invoiceInfo`), shipment (ngày dự kiến, lịch hẹn, lịch lắp), lượt voucher → xóa dòng giỏ (nếu `CART`).
@@ -282,8 +282,8 @@ Theo `STYLE_GUIDE.md`: Inter, màu chính `#0B3056`, lưới 12 cột, lề 80px
 | Route / thành phần | Màn hình | Ghi chú |
 | :-- | :-- | :-- |
 | Popup (không route) | Chọn biến thể | **Điểm vào chính** cho Thêm giỏ và Mua ngay (nút trên `product-card`, hotspot, popup cảm hứng). Dữ liệu `GET /products/:id/quick-view`. Tái dùng phần chọn biến thể cho trang chi tiết sau này |
-| `/cart` | Giỏ hàng | Guard đăng nhập |
-| `/checkout?source=cart` / `/checkout?source=buy-now` | Thanh toán | Guard đăng nhập; layout `compact-header` |
+| `/cart` | Giỏ hàng | Guard đăng nhập; header chung của trang chủ ở dạng nền trắng (`data.layout = 'solid'`) |
+| `/checkout?source=cart` / `/checkout?source=buy-now` | Thanh toán | Guard đăng nhập; `compact-header` bản tối giản (chỉ "Quay lại" và logo) |
 | `/checkout/payment/:orderId` | Thanh toán QR | Đếm ngược, socket + polling |
 | `/checkout/success/:orderId` | Đặt hàng / thanh toán thành công | Link Xem đơn hàng (FR-10, làm sau) và Tiếp tục mua sắm |
 
@@ -347,48 +347,49 @@ Giỏ hàng (4)
 
 ### 4.4. Thanh toán `/checkout`
 
+Theo thiết kế Figma trang Thanh toán: nền trắng, hai cột, tiêu đề mục có gạch dưới.
+
 ```
-Compact header (logo + Thanh toán an toàn)
-┌──────────────────────────────────────────────────────┐ ┌──────────────────────────┐
-│ 1. Địa chỉ giao hàng                                  │ │ Đơn hàng (2 sản phẩm)    │
-│ ◉ Nguyễn Văn A · 0901 234 567  [Mặc định]            │ │ ┌──┐ Sofa Oslo ×2        │
-│   12 Lê Lợi, P. Bến Nghé, Q.1, TP.HCM                 │ │ └──┘ 28.000.000đ         │
-│ ○ Nguyễn Văn A · Văn phòng ...                        │ │ ┌──┐ Bàn trà Nordic ×1   │
-│ [+ Thêm địa chỉ mới]                                  │ │ └──┘ 3.500.000đ          │
-├──────────────────────────────────────────────────────┤ ├──────────────────────────┤
-│ 2. Sản phẩm và lắp đặt                                │ │ Tạm tính      31.500.000đ│
-│  Sofa Oslo  Xám/Vải ▾  [−]2[+]  ☑ Lắp đặt +600.000đ  │ │ Khuyến mãi    −2.000.000đ│
-│  Bàn trà    Gỗ sồi ▾   [−]1[+]                       │ │ Vận chuyển       580.000đ│
-├──────────────────────────────────────────────────────┤ │ Lắp đặt          600.000đ│
-│ 3. Giao hàng                                          │ │ ──────────────────────── │
-│  Dự kiến giao: Thứ Tư, 28/10/2026                     │ │ Tổng        30.680.000đ  │
-│  ☐ Hẹn ngày giao và lắp đặt                           │ │ Trả ngay (QR) 9.204.000đ │
-│     [29/10/2026 ▾]  [Sáng 8–12 ▾]                     │ │ Khi nhận hàng 21.476.000đ│
-│  Ghi chú: [Gọi trước 30 phút...              ]        │ │ Giá đã bao gồm VAT       │
-├──────────────────────────────────────────────────────┤ │                          │
-│ 4. Hóa đơn                                            │ │ [■■■ ĐẶT HÀNG ■■■]       │
-│  ○ Không cần xuất hóa đơn VAT  ○ Cá nhân  ◉ Công ty   │ │ Bằng việc đặt hàng, bạn  │
-│  Tên công ty*  [Công ty TNHH ABC          ]           │ │ đồng ý Điều khoản...     │
-│  Mã số thuế*   [0312345678                ]           │ └──────────────────────────┘
-│  Địa chỉ*      [45 Nguyễn Huệ, Q.1, TP.HCM]           │
-│  ☑ Gửi hóa đơn qua email                              │
-│     Email*     [ketoan@abc.vn             ]           │
-├──────────────────────────────────────────────────────┤
-│ 5. Phương thức thanh toán                             │
-│  ◉ Đặt cọc 30% qua QR – 9.204.000đ                    │
-│     Còn lại 21.476.000đ thanh toán khi nhận hàng      │
-│  ○ Chuyển khoản QR toàn bộ – 30.680.000đ              │
-│  ○ Thanh toán khi nhận hàng (COD)   [khóa]            │
-│     Đơn trên 20.000.000đ cần đặt cọc 30%              │
-└──────────────────────────────────────────────────────┘
+‹ Quay lại                         CaraVeso
+─────────────────────────────────────────────────────────────────────────────────
+Thanh toán
+🔒 Chúng tôi mã hóa tất cả thông tin cá nhân của bạn bằng công nghệ mã hóa TLS...
+─────────────────────────────────────────────────────────────────────────────────
+Địa chỉ giao hàng                          Thông tin đơn hàng
+──────────────────                         ──────────────────
+Họ và Tên*        [Nhập họ tên đầy đủ   ]  ┌─────────────────────────────────────┐
+Số điện thoại*    [Nhập số điện thoại   ]  │ Tổng sản phẩm (2)                   │
+Thành phố/ Tỉnh*  [Lựa chọn Tỉnh/TP    ▾]  │ ┌────┐ Nệm Kymdan                   │
+Phường/ Xã*       [Lựa chọn Phường/Xã  ▾]  │ │    │ Kích thước: 180×200 cm       │
+Địa chỉ*          [Nhập địa chỉ giao hàng]  │ └────┘ Chất liệu: Cao su · Số lượng: 1│
+(◯━) Đặt làm địa chỉ mặc định              │        18.500.000 VND               │
+Ghi chú           [Toà nhà lớn, gọi trước…] │ ...                                 │
+                                           │ Tạm tính (2 mặt hàng)  37.000.000   │
+Giao hàng và lắp đặt                       │ Phí giao hàng   Miễn phí giao hàng  │
+  Dự kiến giao, hẹn ngày + khung giờ,      │ Phí lắp đặt               300.000   │
+  ☑ Lắp đặt <sản phẩm> +300.000            │ Tổng giảm giá          −7.000.000   │
+Hóa đơn VAT                                │ ─────────────────────────────────── │
+  ○ Không cần ○ Cá nhân ○ Công ty + form   │ Tổng tiền              30.000.000   │
+Phương thức thanh toán                     │                  (Đã bao gồm VAT)   │
+┌─────────────────────────────────────┐    │ [■■■■■■■■ THANH TOÁN ■■■■■■■■]       │
+│ 🤲 Thanh toán khi nhận hàng      (●) │    └─────────────────────────────────────┘
+└─────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│ ▦ Chuyển khoản ngân hàng (QR)    (○) │
+│   ○ Đặt cọc 30% – 9.000.000 (đơn > 20tr)
+│   ○ Thanh toán toàn bộ – 30.000.000 │
+└─────────────────────────────────────┘
 ```
 
-- Mọi chỉnh sửa gọi lại `preview` (debounce), khối tổng tiền hiện trạng thái đang tính.
-- Mục 3: đơn chỉ có hàng cấp 1–2 thì ẩn ô hẹn lịch, chỉ hiện ngày dự kiến. Bộ chọn ngày chỉ cho ngày trong khoảng cho phép, khóa Chủ nhật.
-- Mục 4: chọn Không cần thì ẩn form và ô email. Cá nhân hiện Họ tên, MST/CCCD (tùy chọn), Địa chỉ, có nút "Dùng địa chỉ giao hàng". Điền sẵn từ lần xuất hóa đơn gần nhất.
-- Lỗi chặn (`blockingIssues`) hiển thị tại đúng mục (đỏ) và một dòng tóm tắt trên nút Đặt hàng.
-- Mua nhanh: tiêu đề phụ "Mua ngay – không ảnh hưởng giỏ hàng".
-- Đơn ≤ 20tr: chỉ COD (mặc định) và Chuyển khoản QR; COD không có dòng Trả ngay / Khi nhận hàng.
+- Đã có địa chỉ: hiện danh sách để chọn + "Thêm địa chỉ mới" (mở form như trên, có "Chọn địa chỉ đã lưu" để quay lại).
+- Mọi chỉnh sửa gọi lại `preview` (debounce), thẻ tóm tắt mờ khi đang tính.
+- Phí giao hàng bằng 0 hiện "Miễn phí giao hàng". "Tổng giảm giá" = khuyến mãi + voucher, ẩn khi bằng 0. Ô mã giảm giá ẩn đến khi làm voucher (FR-30).
+- Hẹn lịch: đơn chỉ có hàng cấp 1–2 thì ẩn, chỉ hiện ngày dự kiến. Bộ chọn ngày chỉ cho ngày trong khoảng cho phép, khóa Chủ nhật.
+- Hóa đơn: chọn Không cần thì ẩn form và ô email. Cá nhân hiện Họ tên, MST/CCCD (tùy chọn), Địa chỉ, có nút "Dùng địa chỉ giao hàng". Điền sẵn từ lần xuất hóa đơn gần nhất.
+- Thanh toán: đơn > 20tr khóa COD (kèm lý do); chọn chuyển khoản thì có thêm lựa chọn đặt cọc 30% (mặc định) hoặc trả toàn bộ, thẻ tóm tắt thêm dòng Trả ngay (QR) / Khi nhận hàng.
+- Lỗi chặn (`blockingIssues`) hiển thị tại đúng mục hoặc dưới sản phẩm (đỏ) và một dòng tóm tắt trên nút Thanh toán.
+- Mua nhanh: dòng phụ "Mua ngay – không ảnh hưởng giỏ hàng".
+- Điện thoại: một cột, thanh "Tổng tiền + Thanh toán" dính đáy màn hình.
 
 ### 4.5. Thanh toán QR `/checkout/payment/:orderId`
 
@@ -470,7 +471,8 @@ Compact header (logo + Thanh toán an toàn)
 | 12 | Job hết hạn thanh toán | `setInterval` mỗi phút trong `worker.ts` (chưa dùng BullMQ); `GET /orders/:id/payment` cũng tự hủy đơn quá hạn |
 | 13 | Thêm địa chỉ ở trang thanh toán | Địa chỉ mới luôn được lưu vào sổ địa chỉ (bỏ ô "Lưu vào sổ địa chỉ"); API vẫn nhận `newAddress` + `saveAddress` |
 | 14 | Lý do hủy đơn ở trang QR | `CHANGED_MIND`, `WRONG_ORDER`, `PAYMENT_TROUBLE`, `OTHER` (lưu kèm câu mô tả vào `cancellation.reason`) |
-| 15 | Mua nhanh tại trang thanh toán | Sửa số lượng và lắp đặt; đổi biến thể làm sau (nguồn giỏ đổi được qua popup) |
+| 15 | Sản phẩm tại trang thanh toán | Chỉ hiển thị (theo thiết kế); sửa số lượng/biến thể ở giỏ. Lắp đặt chọn ở mục Giao hàng và lắp đặt, cả nguồn giỏ và mua nhanh |
+| 16 | Địa chỉ ở trang thanh toán | Bỏ cấp Quận/Huyện (sáp nhập 2025); Tỉnh và Phường/Xã chọn từ `public/data/vn-units.json` (nguồn thanglequoc/vietnamese-provinces-database v5.2.0, MIT). Chưa làm "Loại địa chỉ". Thẻ thanh toán thứ hai là "Chuyển khoản ngân hàng (QR)", chưa có ví Momo |
 
 ---
 
