@@ -4,14 +4,6 @@
   <div class="container">
     <header class="intro">
       <h1>Thanh toán</h1>
-      <p class="secure">
-        <app-icon name="lucide:lock" [size]="20" />
-        Chúng tôi mã hóa tất cả thông tin cá nhân của bạn bằng công nghệ mã hóa TLS (Bảo mật lớp
-        truyền tải).
-      </p>
-      @if (source === 'BUY_NOW') {
-        <p class="muted">Mua ngay – không ảnh hưởng giỏ hàng</p>
-      }
     </header>
 
     @if (preview(); as p) {
@@ -346,7 +338,7 @@
                 [class.method--active]="payment() === 'COD'"
                 [class.method--disabled]="!isPaymentAvailable('COD', p.payment)"
               >
-                <app-icon name="lucide:hand-coins" [size]="44" />
+                <app-icon name="lucide:hand-coins" [size]="32" />
                 <span class="method__body">
                   <span class="method__name">Thanh toán khi nhận hàng</span>
                   @if (!isPaymentAvailable('COD', p.payment) && p.payment.depositRequired) {
@@ -368,7 +360,7 @@
 
               <div class="method" [class.method--active]="qr">
                 <label class="method__row">
-                  <app-icon name="lucide:qr-code" [size]="44" />
+                  <app-icon name="lucide:qr-code" [size]="32" />
                   <span class="method__body">
                     <span class="method__name">Chuyển khoản ngân hàng (QR)</span>
                     <span class="muted">Quét mã QR bằng ứng dụng ngân hàng, xác nhận tự động</span>

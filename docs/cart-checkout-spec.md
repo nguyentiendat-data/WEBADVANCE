@@ -353,7 +353,6 @@ Theo thiết kế Figma trang Thanh toán: nền trắng, hai cột, tiêu đề
 ‹ Quay lại                         CaraVeso
 ─────────────────────────────────────────────────────────────────────────────────
 Thanh toán
-🔒 Chúng tôi mã hóa tất cả thông tin cá nhân của bạn bằng công nghệ mã hóa TLS...
 ─────────────────────────────────────────────────────────────────────────────────
 Địa chỉ giao hàng                          Thông tin đơn hàng
 ──────────────────                         ──────────────────
@@ -388,7 +387,6 @@ Phương thức thanh toán                     │                  (Đã bao g
 - Hóa đơn: chọn Không cần thì ẩn form và ô email. Cá nhân hiện Họ tên, MST/CCCD (tùy chọn), Địa chỉ, có nút "Dùng địa chỉ giao hàng". Điền sẵn từ lần xuất hóa đơn gần nhất.
 - Thanh toán: đơn > 20tr khóa COD (kèm lý do); chọn chuyển khoản thì có thêm lựa chọn đặt cọc 30% (mặc định) hoặc trả toàn bộ, thẻ tóm tắt thêm dòng Trả ngay (QR) / Khi nhận hàng.
 - Lỗi chặn (`blockingIssues`) hiển thị tại đúng mục hoặc dưới sản phẩm (đỏ) và một dòng tóm tắt trên nút Thanh toán.
-- Mua nhanh: dòng phụ "Mua ngay – không ảnh hưởng giỏ hàng".
 - Điện thoại: một cột, thanh "Tổng tiền + Thanh toán" dính đáy màn hình.
 
 ### 4.5. Thanh toán QR `/checkout/payment/:orderId`

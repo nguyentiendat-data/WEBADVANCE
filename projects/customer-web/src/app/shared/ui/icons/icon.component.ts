@@ -18,7 +18,6 @@ export type IconName =
   | 'lucide:minus'
   | 'lucide:plus'
   | 'lucide:trash-2'
-  | 'lucide:lock'
   | 'lucide:hand-coins'
   | 'lucide:qr-code'
   | 'mdi:chat-processing'
