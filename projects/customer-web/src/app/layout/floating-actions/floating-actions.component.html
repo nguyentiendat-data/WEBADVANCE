@@ -1,13 +1,15 @@
-<div class="dock" role="group" aria-label="Công cụ nhanh">
-  <button type="button" class="dock__search" (click)="openSearch()">
-    <app-icon name="lucide:search" [size]="18" />
-    <span>Search</span>
-  </button>
-  <!-- TODO: trợ lý AI tìm kiếm sản phẩm (FR-17) -->
-  <button type="button" class="dock__ai" aria-label="Trợ lý AI (sắp ra mắt)" title="Sắp ra mắt">
-    <app-icon name="lucide:sparkles" [size]="18" />
-  </button>
-</div>
+@if (showDock()) {
+  <div class="dock" role="group" aria-label="Công cụ nhanh">
+    <button type="button" class="dock__search" (click)="openSearch()">
+      <app-icon name="lucide:search" [size]="16" />
+      <span>Search</span>
+    </button>
+    <!-- TODO: trợ lý AI tìm kiếm sản phẩm (FR-17) -->
+    <button type="button" class="dock__ai" aria-label="Trợ lý AI (sắp ra mắt)" title="Sắp ra mắt">
+      <app-icon name="lucide:sparkles" [size]="16" />
+    </button>
+  </div>
+}
 
 <div class="side">
   <!-- TODO(FR-44): chat với chăm sóc khách hàng -->

@@ -1,0 +1,57 @@
+<nav class="crumbs" aria-label="Đường dẫn">
+  <ol class="container">
+    <li><a routerLink="/">Trang chủ</a></li>
+    <li><app-icon name="lucide:chevron-right" [size]="14" /></li>
+    <li aria-current="page">Khuyến mãi</li>
+  </ol>
+</nav>
+
+@if (flashSale(); as sale) {
+  <section class="hero" [attr.aria-label]="sale.promotion.name">
+    <h1 class="hero__title">
+      <span class="hero__flash"><app-icon name="lucide:zap" [size]="40" /> FLASH SALE</span>
+      HÔM NAY
+    </h1>
+    <p class="hero__sub">
+      @if (maxDiscount() > 0) {
+        Ưu đãi lên tới {{ maxDiscount() }}% cho các sản phẩm nội thất cao cấp - Nhanh tay kẻo lỡ
+      } @else {
+        {{ sale.promotion.name }} - Nhanh tay kẻo lỡ
+      }
+    </p>
+    <app-countdown size="large" [endDate]="sale.promotion.endDate" />
+  </section>
+}
+
+<section class="container list">
+  <header class="list__head">
+    <h2>Khuyến mãi</h2>
+    @if (!loading() || products().length) {
+      <span class="list__count">({{ total() }} sản phẩm)</span>
+    }
+  </header>
+
+  @if (products().length) {
+    <div class="grid" role="list">
+      @for (product of products(); track product.id) {
+        <app-product-card [product]="product" />
+      }
+    </div>
+  } @else if (failed()) {
+    <p class="state">Không tải được danh sách khuyến mãi. Vui lòng thử lại.</p>
+  } @else if (!loading()) {
+    <p class="state">Hiện chưa có sản phẩm khuyến mãi.</p>
+  }
+
+  @if (failed() && products().length) {
+    <p class="state">Không tải thêm được sản phẩm. Vui lòng thử lại.</p>
+  }
+
+  @if (hasMore() || (failed() && products().length)) {
+    <div class="more">
+      <button type="button" class="more__btn" [disabled]="loading()" (click)="loadMore()">
+        {{ loading() ? 'Đang tải...' : 'Xem thêm' }}
+      </button>
+    </div>
+  }
+</section>

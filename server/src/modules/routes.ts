@@ -7,6 +7,7 @@ import { inspirationRoutes } from './inspirations/inspiration.routes.js';
 import { productRoutes } from './products/product.routes.js';
 import { promotionRoutes } from './promotions/promotion.routes.js';
 import { showroomRoutes } from './showrooms/showroom.routes.js';
+import { viewRoomRoutes } from './view-room/view-room.routes.js';
 
 export const apiRoutes = Router();
 
@@ -18,3 +19,4 @@ apiRoutes.use('/inspirations', inspirationRoutes);
 apiRoutes.use('/products', productRoutes);
 apiRoutes.use('/promotions', promotionRoutes);
 apiRoutes.use('/showrooms', showroomRoutes);
+apiRoutes.use('/view-room', viewRoomRoutes);

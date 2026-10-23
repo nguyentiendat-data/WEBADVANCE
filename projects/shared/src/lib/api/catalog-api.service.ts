@@ -4,7 +4,7 @@ import { Observable, map } from 'rxjs';
 import type { ApiPageResponse, ApiResponse, PageMeta } from '../models/api-response.model';
 import type { Banner } from '../models/banner.model';
 import type { Category, CategoryType } from '../models/category.model';
-import type { CollectionSummary } from '../models/collection.model';
+import type { CollectionDetail, CollectionSummary } from '../models/collection.model';
 import type { InspirationDetail, InspirationSummary } from '../models/inspiration.model';
 import type { ProductListItem, ProductListQuery } from '../models/product.model';
 import type { FlashSale } from '../models/promotion.model';
@@ -50,6 +50,12 @@ export class CatalogApiService {
   getCollections(): Observable<CollectionSummary[]> {
     return this.http
       .get<ApiResponse<CollectionSummary[]>>(`${API_BASE}/collections`)
+      .pipe(map((r) => r.data));
+  }
+
+  getCollection(slug: string): Observable<CollectionDetail> {
+    return this.http
+      .get<ApiResponse<CollectionDetail>>(`${API_BASE}/collections/${slug}`)
       .pipe(map((r) => r.data));
   }
 

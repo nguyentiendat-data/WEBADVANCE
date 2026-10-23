@@ -14,7 +14,7 @@ import { IconComponent } from '../icons/icon.component';
 })
 export class ProductCardComponent {
   readonly product = input.required<ProductListItem>();
-  /** Dạng gọn dùng trong khối Flash Sale: nền trắng, có nhãn phần trăm giảm. */
+  /** Dạng gọn dùng trong khối Flash Sale: nền trắng, giá sale màu nhấn. */
   readonly compact = input(false);
 
   protected readonly discountPercent = computed(() => {

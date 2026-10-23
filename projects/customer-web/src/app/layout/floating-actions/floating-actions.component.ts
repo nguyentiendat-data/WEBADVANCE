@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { SearchUiService } from '../../core/search/search-ui.service';
 import { IconComponent } from '../../shared/ui/icons/icon.component';
 
@@ -15,6 +15,9 @@ const SHOW_TOP_THRESHOLD = 400;
   styleUrl: './floating-actions.component.css',
 })
 export class FloatingActionsComponent {
+  /** Hiện cụm nút Search và AI ở giữa chân trang. */
+  readonly showDock = input(true);
+
   private readonly search = inject(SearchUiService);
 
   protected readonly showTop = signal(false);

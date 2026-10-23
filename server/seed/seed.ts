@@ -471,7 +471,15 @@ async function seedCollections(products: Map<string, Types.ObjectId>): Promise<v
       shortDescription: 'Bộ sưu tập phòng khách tông be ấm áp',
       description: 'ODA mang đến sự cân bằng giữa vật liệu tự nhiên và đường nét tinh giản.',
       displayOrder: 1,
-      products: [{ productId: pid('Sofa Oslo') }, { productId: pid('Tủ tivi Oda') }],
+      products: [
+        { productId: pid('Sofa Oslo'), displayOrder: 1 },
+        { productId: pid('Sofa góc Aria'), displayOrder: 2 },
+        { productId: pid('Bàn trà Walnut'), displayOrder: 3 },
+        { productId: pid('Tủ tivi Oda'), displayOrder: 4 },
+        { productId: pid('Ghế đôn Pouf Cloud'), displayOrder: 5 },
+        { productId: pid('Ghế bành Luna'), displayOrder: 6 },
+        { productId: pid('Đèn sàn Arc'), displayOrder: 7 },
+      ],
       images: [
         {
           url: img(PHOTO.livingWhite, 1920),
@@ -483,6 +491,18 @@ async function seedCollections(products: Map<string, Types.ObjectId>): Promise<v
             { productId: pid('Bàn trà Walnut'), x: 0.55, y: 0.78 },
           ],
         },
+        {
+          url: img(PHOTO.livingRound, 1920),
+          title: 'Góc đọc ODA',
+          displayOrder: 2,
+          hotspots: [{ productId: pid('Ghế bành Luna'), x: 0.35, y: 0.6 }],
+        },
+        {
+          url: img(PHOTO.livingCoffee, 1920),
+          title: 'Bàn trà ODA',
+          displayOrder: 3,
+          hotspots: [{ productId: pid('Bàn trà Walnut'), x: 0.5, y: 0.7 }],
+        },
       ],
     },
     {
@@ -491,13 +511,33 @@ async function seedCollections(products: Map<string, Types.ObjectId>): Promise<v
       slogan: 'Tối giản, ấm áp và gần gũi',
       shortDescription: 'Phong cách Bắc Âu với gỗ sáng màu',
       displayOrder: 2,
-      products: [{ productId: pid('Ghế bành Luna') }],
+      products: [
+        { productId: pid('Ghế bành Luna'), displayOrder: 1 },
+        { productId: pid('Ghế ăn Wishbone'), displayOrder: 2 },
+        { productId: pid('Bàn ăn Oak 6 ghế'), displayOrder: 3 },
+        { productId: pid('Tủ quần áo Mori'), displayOrder: 4 },
+        { productId: pid('Gương tròn Sun'), displayOrder: 5 },
+        { productId: pid('Bàn console Arc'), displayOrder: 6 },
+        { productId: pid('Bàn làm việc Minimal'), displayOrder: 7 },
+      ],
       images: [
         {
           url: img(PHOTO.livingSideboard, 1920),
           isThumbnail: true,
           displayOrder: 1,
           hotspots: [{ productId: pid('Tủ quần áo Mori'), x: 0.3, y: 0.7 }],
+        },
+        {
+          url: img(PHOTO.livingWide, 1920),
+          title: 'Phòng khách Nordic',
+          displayOrder: 2,
+          hotspots: [{ productId: pid('Gương tròn Sun'), x: 0.6, y: 0.3 }],
+        },
+        {
+          url: img(PHOTO.livingGrey, 1920),
+          title: 'Góc làm việc Nordic',
+          displayOrder: 3,
+          hotspots: [{ productId: pid('Bàn làm việc Minimal'), x: 0.45, y: 0.65 }],
         },
       ],
     },
@@ -507,13 +547,33 @@ async function seedCollections(products: Map<string, Types.ObjectId>): Promise<v
       slogan: 'Cá tính cho căn hộ đô thị',
       shortDescription: 'Chất liệu da và gỗ đậm màu',
       displayOrder: 3,
-      products: [{ productId: pid('Sofa da Milan') }],
+      products: [
+        { productId: pid('Sofa da Milan'), displayOrder: 1 },
+        { productId: pid('Bàn làm việc Minimal'), displayOrder: 2 },
+        { productId: pid('Ghế ăn Wishbone'), displayOrder: 3 },
+        { productId: pid('Đèn sàn Arc'), displayOrder: 4 },
+        { productId: pid('Tủ tivi Oda'), displayOrder: 5 },
+        { productId: pid('Bàn trà Walnut'), displayOrder: 6 },
+        { productId: pid('Ghế đôn Pouf Cloud'), displayOrder: 7 },
+      ],
       images: [
         {
           url: img(PHOTO.loft, 1920),
           isThumbnail: true,
           displayOrder: 1,
           hotspots: [{ productId: pid('Sofa da Milan'), x: 0.5, y: 0.65 }],
+        },
+        {
+          url: img(PHOTO.livingBoho, 1920),
+          title: 'Góc boho Urban',
+          displayOrder: 2,
+          hotspots: [{ productId: pid('Ghế đôn Pouf Cloud'), x: 0.4, y: 0.8 }],
+        },
+        {
+          url: img(PHOTO.leatherSofa, 1920),
+          title: 'Phòng khách da Urban',
+          displayOrder: 3,
+          hotspots: [{ productId: pid('Sofa da Milan'), x: 0.55, y: 0.6 }],
         },
       ],
     },
@@ -539,6 +599,22 @@ async function seedInspirations(products: Map<string, Types.ObjectId>): Promise<
     {
       imageUrl: portrait(PHOTO.dining),
       products: list('Bàn ăn Oak 6 ghế', 'Ghế ăn Wishbone', 'Gương tròn Sun'),
+    },
+    {
+      imageUrl: portrait(PHOTO.livingBoho),
+      products: list('Sofa Oslo', 'Ghế bành Luna', 'Bàn trà Walnut'),
+    },
+    {
+      imageUrl: portrait(PHOTO.bedroomGreen),
+      products: list('Giường Kyoto', 'Bộ chăn ga Cotton Satin', 'Đèn sàn Arc'),
+    },
+    {
+      imageUrl: portrait(PHOTO.loft),
+      products: list('Sofa da Milan', 'Tủ tivi Oda', 'Bàn làm việc Minimal'),
+    },
+    {
+      imageUrl: portrait(PHOTO.livingWide),
+      products: list('Sofa góc Aria', 'Ghế đôn Pouf Cloud', 'Gương tròn Sun'),
     },
   ]);
 }

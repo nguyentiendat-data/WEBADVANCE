@@ -42,6 +42,9 @@
   /* Lề trang thu nhỏ theo màn hình, tối đa bằng lề của style guide. */
   --page-gutter: clamp(16px, 5.5vw, var(--layout-margin));
   --page-max: 1440px;
+
+  /* Chiều cao header cố định (thanh trên cùng 34px + thanh chính 81px), trang con chừa chỗ này. */
+  --header-offset: 115px;
 }
 
 *,

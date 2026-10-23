@@ -53,6 +53,10 @@
 }
 
 .caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding-top: 12px;
 }
 .caption h3 {
@@ -63,6 +67,24 @@
   margin-top: 4px;
   font-size: var(--font-size-sm);
   color: var(--color-muted);
+}
+
+.explore {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  border: 1px solid var(--color-black);
+  border-radius: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-black);
+  text-decoration: none;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.explore:hover {
+  background: var(--color-black);
+  color: var(--color-white);
 }
 
 @media (max-width: 640px) {

@@ -8,9 +8,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { CatalogApiService, type Category } from 'shared';
-import { catchError, of } from 'rxjs';
+import { catchError, filter, map, of } from 'rxjs';
 import { SearchUiService } from '../../core/search/search-ui.service';
 import { IconComponent } from '../../shared/ui/icons/icon.component';
 
@@ -22,6 +22,7 @@ const SCROLL_THRESHOLD = 24;
   imports: [RouterLink, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    '[class.solid]': '!isHome()',
     '[class.scrolled]': 'scrolled()',
     '[class.menu-open]': 'menuOpen()',
     '[class.search-open]': 'search.open()',
@@ -32,12 +33,22 @@ const SCROLL_THRESHOLD = 24;
 })
 export class HeaderComponent {
   private readonly api = inject(CatalogApiService);
+  private readonly router = inject(Router);
 
   protected readonly search = inject(SearchUiService);
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
   protected readonly menuOpen = signal(false);
   protected readonly scrolled = signal(false);
+
+  /** Chỉ trang chủ có header trong suốt đè lên banner; các trang khác header luôn nền trắng. */
+  protected readonly isHome = toSignal(
+    this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects.split(/[?#]/)[0] === '/'),
+    ),
+    { initialValue: this.router.url.split(/[?#]/)[0] === '/' },
+  );
 
   private readonly categories = toSignal(
     this.api.getCategories().pipe(catchError(() => of<Category[]>([]))),

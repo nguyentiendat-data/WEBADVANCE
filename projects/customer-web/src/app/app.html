@@ -1,6 +1,8 @@
-<app-header />
+@if (showHeader()) {
+  <app-header />
+}
 <main>
   <router-outlet />
 </main>
 <app-footer />
-<app-floating-actions />
+<app-floating-actions [showDock]="!isViewYourRoom()" />

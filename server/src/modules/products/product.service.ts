@@ -1,3 +1,4 @@
+import { AppError } from '../../utils/app-error.js';
 import type { Types } from 'mongoose';
 import { CategoryModel } from '../categories/category.model.js';
 import {
@@ -200,5 +201,41 @@ export async function listProducts(
   return {
     items: filtered.slice(start, start + q.limit).map((e) => e.item),
     total: filtered.length,
+  };
+}
+
+export interface ProductDetail extends ProductListItem {
+  description: string;
+  has3DModel: boolean;
+  model3DUrl: string | null;
+  dimensions: { length: number; width: number; height: number; unit: string } | null;
+}
+
+export async function getProductDetail(slug: string): Promise<ProductDetail> {
+  const product = await ProductModel.findOne({ slug, status: 'ACTIVE' }).lean();
+  if (!product) throw new AppError('NOT_FOUND', 404, 'Không tìm thấy sản phẩm');
+
+  const [item] = await buildListItems([product]);
+  if (!item) throw new AppError('NOT_FOUND', 404, 'Không tìm thấy sản phẩm');
+
+  const variants = await VariantModel.find({ productId: product._id, status: 'ACTIVE' }).lean();
+  const model = product.media.find((m) => m.type === 'MODEL_3D');
+  const size = variants.find(
+    (v) => v.dimensions?.length && v.dimensions.width && v.dimensions.height,
+  );
+
+  return {
+    ...item,
+    description: product.description ?? '',
+    has3DModel: !!model,
+    model3DUrl: model?.url ?? null,
+    dimensions: size?.dimensions
+      ? {
+          length: size.dimensions.length ?? 0,
+          width: size.dimensions.width ?? 0,
+          height: size.dimensions.height ?? 0,
+          unit: size.dimensions.unit,
+        }
+      : null,
   };
 }

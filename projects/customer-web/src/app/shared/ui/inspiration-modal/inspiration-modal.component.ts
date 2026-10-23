@@ -15,8 +15,8 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { CatalogApiService, type InspirationDetail, type InspirationSummary } from 'shared';
 import { catchError, of, switchMap } from 'rxjs';
-import { VndPipe } from '../../../../shared/pipes/vnd.pipe';
-import { IconComponent } from '../../../../shared/ui/icons/icon.component';
+import { VndPipe } from '../../pipes/vnd.pipe';
+import { IconComponent } from '../icons/icon.component';
 
 /**
  * Popup "Mua sắm theo nguồn cảm hứng": ảnh bên trái (chuyển qua lại), sản phẩm trong ảnh bên phải.
