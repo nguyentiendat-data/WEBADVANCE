@@ -1,18 +1,43 @@
-import path from 'node:path';
 import express from 'express';
+import cookieParser from 'cookie-parser';
+import pinoHttp from 'pino-http';
+import path from 'node:path';
 import { config } from './config/index.js';
+import { connectDb } from './lib/db.js';
+import { logger } from './lib/logger.js';
+import { errorHandler, notFoundHandler } from './middlewares/error.middleware.js';
+import { authRouter } from './modules/auth/auth.routes.js';
 
 const app = express();
-app.use(express.json());
+
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+app.use(express.json({ limit: '1mb' }));
+app.use(cookieParser(config.COOKIE_SECRET));
+app.use(pinoHttp({ logger }));
 
 app.get('/api/v1/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok' } });
 });
 
+app.use('/api/v1/auth', authRouter);
+
 app.use('/uploads', express.static(path.resolve('uploads')));
 app.use('/admin', express.static(path.resolve('dist/admin-web/browser')));
 app.use(express.static(path.resolve('dist/customer-web/browser')));
 
-app.listen(config.port, () => {
-  console.warn(`API đang chạy ở cổng ${config.port}`);
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+async function bootstrap(): Promise<void> {
+  await connectDb();
+
+  app.listen(config.PORT, () => {
+    logger.info(`API đang chạy ở cổng ${config.PORT}`);
+  });
+}
+
+bootstrap().catch((error) => {
+  logger.error({ err: error }, 'Không thể khởi động server');
+  process.exit(1);
 });

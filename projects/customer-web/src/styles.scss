@@ -1,1 +1,57 @@
-/* You can add global styles to this file, and also import other style files */
+@use './styles/auth';
+@use './app/features/auth/components/auth-layout/auth-layout.component';
+
+:root {
+  --brand: #17453a;
+  --brand-strong: #0f3229;
+  --brand-soft: #e7efe9;
+  --accent: #c1704d;
+  --ink: #1b2522;
+  --muted: #6b7a74;
+  --line: #ded8cc;
+  --bg: #f7f4ee;
+  --surface: #ffffff;
+  --danger: #b4342b;
+  --danger-soft: #fdeceb;
+  --success: #176b4d;
+  --success-soft: #e8f5ee;
+  --radius: 14px;
+  --shadow: 0 28px 70px rgba(23, 69, 58, 0.14);
+  --font-sans: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-serif: 'Cambria', 'Times New Roman', 'Noto Serif', Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

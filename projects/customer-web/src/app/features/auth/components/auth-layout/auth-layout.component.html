@@ -1,0 +1,113 @@
+<div class="auth-layout">
+  <div class="announcement">
+    <span>Chỉ duy nhất 1 lần, tặng voucher 100.000 VNĐ cho khách hàng mới của CaraVeso</span>
+    <div>
+      <a routerLink="/auth/login">Đăng nhập</a>
+      <span>/</span>
+      <a routerLink="/auth/register">Đăng ký</a>
+    </div>
+  </div>
+
+  <header class="store-header">
+    <nav class="store-nav" aria-label="Danh mục chính">
+      <a href="/">Sản phẩm <span aria-hidden="true">⌄</span></a>
+      <a href="/">Các phòng <span aria-hidden="true">⌄</span></a>
+      <a href="/">Nguồn cảm hứng</a>
+      <a class="sale-link" href="/">Khuyến mãi</a>
+    </nav>
+
+    <a class="store-brand" routerLink="/" aria-label="CaraVeso - Trang chủ">CaraVeso</a>
+
+    <div class="store-actions">
+      <label class="store-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="10.8" cy="10.8" r="6.3"></circle>
+          <path d="m16 16 4.2 4.2"></path>
+        </svg>
+        <input type="search" placeholder="Nhập sản phẩm, chất liệu, phong cách..." />
+        <span aria-hidden="true">⌕</span>
+      </label>
+      <a class="icon-link" routerLink="/auth/login" aria-label="Sản phẩm yêu thích">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M20.4 8.8c0 4.3-8.4 10-8.4 10s-8.4-5.7-8.4-10A4.3 4.3 0 0 1 12 6.5a4.3 4.3 0 0 1 8.4 2.3Z"
+          ></path>
+        </svg>
+      </a>
+      <a class="icon-link" routerLink="/auth/login" aria-label="Tài khoản">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="7.5" r="3.5"></circle>
+          <path d="M4.8 20c.5-3.5 3.2-5.5 7.2-5.5s6.7 2 7.2 5.5Z"></path>
+        </svg>
+      </a>
+      <a class="icon-link" routerLink="/auth/login" aria-label="Giỏ hàng">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 4h2l2.2 11.2h10.9L21 7H6"></path>
+          <circle cx="9" cy="19" r="1.2"></circle>
+          <circle cx="17" cy="19" r="1.2"></circle>
+        </svg>
+      </a>
+    </div>
+  </header>
+
+  <nav class="breadcrumb" aria-label="Điều hướng">
+    <a routerLink="/">Trang chủ</a>
+    @for (crumb of breadcrumbs; track $index) {
+      <span class="breadcrumb-separator" aria-hidden="true">›</span>
+      <span [attr.aria-current]="$last ? 'page' : null">{{ crumb }}</span>
+    }
+  </nav>
+
+  <main class="auth-main">
+    <ng-content />
+  </main>
+
+  <footer class="store-footer">
+    <div class="footer-content">
+      <section>
+        <h2>Thông tin</h2>
+        <a href="/">Câu hỏi thường gặp</a>
+        <a href="/">Hướng dẫn mua hàng</a>
+        <a href="/">Chính sách giao hàng</a>
+        <a href="/">Chính sách đổi trả</a>
+        <a href="/">Chính sách bảo hành</a>
+        <a href="/">Phương thức thanh toán</a>
+        <a href="/">Điều khoản sử dụng</a>
+        <a href="/">Chính sách bảo mật</a>
+        <a href="/">Chính sách thành viên</a>
+      </section>
+      <section>
+        <h2>CaraVeso</h2>
+        <a href="/">Về chúng tôi</a>
+        <a href="/">Liên hệ</a>
+        <a href="/">Hệ thống showroom</a>
+        <a href="/">Blog &amp; Cảm hứng sống</a>
+        <a href="/">Tuyển dụng</a>
+      </section>
+      <section class="company-info">
+        <h2>Thông tin công ty</h2>
+        <p>Ngày hoạt động: 11 - 03 - 2006</p>
+        <p>
+          <strong>Trụ sở chính:</strong><br />
+          CaraVeso Design Center, Tầng 15, Tòa nhà The Crescent Office,<br />
+          101 Tôn Dật Tiên, Khu đô thị Phú Mỹ Hưng, Phường Tân Phú,<br />
+          Quận 7, Thành phố Hồ Chí Minh, Việt Nam.
+        </p>
+        <p>
+          <strong>Hotline:</strong> 1900 080906<br /><strong>Email:</strong>
+          caravesodesign&#64;com.vn
+        </p>
+      </section>
+      <section class="footer-brand">
+        <a routerLink="/" aria-label="CaraVeso - Trang chủ">CaraVeso</a>
+        <div aria-label="Mạng xã hội">
+          <span>▶</span>
+          <span>♪</span>
+          <span>◎</span>
+          <span>f</span>
+        </div>
+      </section>
+    </div>
+    <div class="footer-copyright">Bản quyền © 2026 CARAVESO FURNITURE.</div>
+  </footer>
+</div>

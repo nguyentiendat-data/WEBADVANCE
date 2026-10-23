@@ -1,13 +1,42 @@
 import 'dotenv/config';
+import { z } from 'zod';
+
+const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  PORT: z.coerce.number().int().positive().default(3000),
+  MONGODB_URI: z.string().min(1, 'Thiếu MONGODB_URI'),
+  REDIS_URL: z.string().min(1, 'Thiếu REDIS_URL'),
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET phải dài tối thiểu 32 ký tự'),
+  COOKIE_SECRET: z.string().min(16, 'COOKIE_SECRET phải dài tối thiểu 16 ký tự'),
+  RESEND_API_KEY: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  FIREBASE_PROJECT_ID: z.string().optional(),
+  FIREBASE_CLIENT_EMAIL: z.string().optional(),
+  FIREBASE_PRIVATE_KEY: z.string().optional(),
+  GOOGLE_APPLICATION_CREDENTIALS: z.string().optional(),
+  BANK_WEBHOOK_SECRET: z.string().optional(),
+  OTP_EMAIL_FROM: z.string().default('CaraVeso <onboarding@resend.dev>'),
+  ALLOWED_ORIGINS: z.string().default('http://localhost:4200,http://localhost:4201'),
+});
+
+const parsed = envSchema.safeParse(process.env);
+
+if (!parsed.success) {
+  const details = parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`);
+  console.error('Cấu hình môi trường không hợp lệ:\n- ' + details.join('\n- '));
+  process.exit(1);
+}
+
+const env = parsed.data;
 
 export const config = {
-  port: Number(process.env['PORT'] ?? 3000),
-  mongodbUri: process.env['MONGODB_URI'] ?? '',
-  redisUrl: process.env['REDIS_URL'] ?? '',
-  jwtSecret: process.env['JWT_SECRET'] ?? '',
-  cookieSecret: process.env['COOKIE_SECRET'] ?? '',
-  resendApiKey: process.env['RESEND_API_KEY'] ?? '',
-  geminiApiKey: process.env['GEMINI_API_KEY'] ?? '',
-  googleClientId: process.env['GOOGLE_CLIENT_ID'] ?? '',
-  bankWebhookSecret: process.env['BANK_WEBHOOK_SECRET'] ?? '',
-};
+  ...env,
+  isDev: env.NODE_ENV !== 'production',
+  allowedOrigins: env.ALLOWED_ORIGINS.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+  accessTokenTtl: '15m',
+  customerRefreshTtlSeconds: 7 * 24 * 60 * 60,
+  adminRefreshTtlSeconds: 30 * 60,
+} as const;

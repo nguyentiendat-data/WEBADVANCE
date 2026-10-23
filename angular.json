@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": "6667a4f3-eb6e-4559-a1f0-ef0490b94e1a"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -45,6 +46,7 @@
             "outputPath": "dist/customer-web",
             "index": "projects/customer-web/src/index.html",
             "browser": "projects/customer-web/src/main.ts",
+            "polyfills": ["zone.js"],
             "tsConfig": "projects/customer-web/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -134,6 +136,7 @@
             "outputPath": "dist/admin-web",
             "index": "projects/admin-web/src/index.html",
             "browser": "projects/admin-web/src/main.ts",
+            "polyfills": ["zone.js"],
             "tsConfig": "projects/admin-web/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -192,6 +195,9 @@
       "architect": {
         "build": {
           "builder": "@angular/build:ng-packagr",
+          "options": {
+            "project": "projects/shared/ng-package.json"
+          },
           "configurations": {
             "production": {
               "tsConfig": "projects/shared/tsconfig.lib.prod.json"
