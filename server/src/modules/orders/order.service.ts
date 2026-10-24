@@ -22,6 +22,7 @@ import { resolvePayment } from '../checkout/pricing.js';
 import { getCheckoutConfig, type BankAccountConfig } from '../config/config.service.js';
 import { StockHistoryModel, type StockChangeType } from '../products/stock-history.model.js';
 import { VariantModel } from '../products/variant.model.js';
+import { consumeVoucher, refundVoucherUsage } from '../vouchers/voucher.service.js';
 import { OrderModel, type OrderDoc, type OrderStatus } from './order.model.js';
 import { PaymentTransactionModel, type RefundAccount } from './payment-transaction.model.js';
 import { ShipmentModel } from './shipment.model.js';
@@ -182,6 +183,13 @@ function blockingError(issue: BlockingIssue, preview: CheckoutPreview): AppError
       return new AppError('INSUFFICIENT_STOCK', 409, 'Có sản phẩm không đủ hàng', details);
     case 'VARIANT_UNAVAILABLE':
       return new AppError('VARIANT_UNAVAILABLE', 409, 'Có sản phẩm đã ngừng bán', details);
+    case 'VOUCHER_INVALID':
+      return new AppError(
+        'VOUCHER_INVALID',
+        409,
+        issue.message ?? 'Mã giảm giá không hợp lệ',
+        details,
+      );
     case 'ADDRESS_REQUIRED':
       return new AppError('ADDRESS_REQUIRED', 400, 'Chưa có địa chỉ giao hàng', details);
     case 'SCHEDULE_INVALID':
@@ -211,7 +219,7 @@ export async function createOrder(
   const previous = await replay();
   if (previous) return previous;
 
-  const { preview, lines, schedule, config } = await buildCheckout(userId, body, now);
+  const { preview, voucher, lines, schedule, config } = await buildCheckout(userId, body, now);
   const issue = preview.blockingIssues[0];
   if (issue) throw blockingError(issue, preview);
   if (body.expectedTotal !== preview.summary.totalAmount) {
@@ -238,6 +246,8 @@ export async function createOrder(
         }
       }
 
+      if (voucher?.view.valid) await consumeVoucher(session, voucher, userId, orderId, now);
+
       const orderCode = await nextOrderCode(now, session);
       const [created] = await OrderModel.create(
         [
@@ -246,6 +256,7 @@ export async function createOrder(
             orderCode,
             userId,
             idempotencyKey,
+            voucherId: voucher?.view.valid ? voucher.voucher?._id : null,
             shippingAddress: address,
             ...summary,
             status,
@@ -313,7 +324,11 @@ export async function createOrder(
       if (body.source === 'CART') {
         await CartModel.updateOne(
           { userId },
-          { $pull: { items: { variantId: { $in: lines.map((l) => l.ctx.variant._id) } } } },
+          {
+            $pull: { items: { variantId: { $in: lines.map((l) => l.ctx.variant._id) } } },
+            // Voucher đã dùng cho đơn này; hủy đơn sẽ hoàn lượt, khách tự áp lại nếu muốn.
+            ...(voucher?.view.valid ? { $set: { appliedVoucherId: null } } : {}),
+          },
           { session },
         );
       }
@@ -403,6 +418,8 @@ async function cancelOrder(
     for (const item of before.items) {
       await changeStock(session, before._id, item.variantId, item.quantity, 'ORDER_CANCEL_RESTORE');
     }
+    // Hủy hoặc hết hạn thanh toán thì hoàn lượt voucher và trả voucher về ví (FR-37).
+    if (before.voucherId) await refundVoucherUsage(session, before._id, now);
     if (isPaid(before)) {
       // Hoàn 100% (kể cả cọc, phí lắp đặt vì chưa lắp) trong 3–7 ngày làm việc; Order Admin xử lý.
       await PaymentTransactionModel.create(

@@ -34,6 +34,8 @@
   --color-accent: #e11d2e;
   --color-muted: #6b6b6b;
   --color-surface: #f2f2f2;
+  --color-success: #15803d;
+  --color-warning: #b45309;
   --font-size-sm: 13px;
   --font-size-xs: 12px;
   --font-size-display: clamp(36px, 4vw, 56px);

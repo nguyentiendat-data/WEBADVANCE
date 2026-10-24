@@ -14,8 +14,20 @@ import {
   type StockStatus,
 } from '../products/product.service.js';
 import type { VariantDoc } from '../products/variant.model.js';
+import {
+  evaluateVoucher,
+  priceWithVoucher,
+  type VoucherRow,
+  type VoucherView,
+} from '../vouchers/voucher.service.js';
+import { VoucherModel } from '../vouchers/voucher.model.js';
 import { CartModel, type CartItem } from './cart.model.js';
-import type { AddCartItemBody, CartSelectionBody, UpdateCartItemBody } from './cart.schema.js';
+import type {
+  AddCartItemBody,
+  ApplyVoucherBody,
+  CartSelectionBody,
+  UpdateCartItemBody,
+} from './cart.schema.js';
 
 export type CartWarning =
   'PRICE_CHANGED' | 'OUT_OF_STOCK' | 'LOW_STOCK' | 'EXCEEDS_STOCK' | 'VARIANT_UNAVAILABLE';
@@ -58,10 +70,21 @@ export interface CartItemView {
   available?: number;
 }
 
+/** Voucher đang gắn vào giỏ. Hết hợp lệ thì vẫn giữ lại kèm lý do, giảm giá bằng 0 (BR-C08). */
+export interface AppliedVoucherView {
+  id: string | null;
+  code: string | null;
+  name: string | null;
+  valid: boolean;
+  reason: VoucherView['reason'];
+  message: string | null;
+  discount: number;
+}
+
 export interface CartView {
   id: string | null;
   items: CartItemView[];
-  appliedVoucher: null;
+  appliedVoucher: AppliedVoucherView | null;
   summary: PriceSummary;
 }
 
@@ -208,9 +231,27 @@ async function buildView(cart: CartDocument | null): Promise<CartView> {
     shipping,
     payment,
   );
-  const selectedInputs = rows
+  const selectedRows: VoucherRow[] = rows
     .filter((r) => isItemSelected(r.item))
-    .map((r) => toPricingInput(r.ctx, r.item));
+    .map((r) => ({ ctx: r.ctx, input: toPricingInput(r.ctx, r.item) }));
+  const voucherRef = cart?.appliedVoucherId ? { voucherId: cart.appliedVoucherId } : null;
+  const { priced: selectedPriced, evaluation } =
+    cart && voucherRef
+      ? await priceWithVoucher({
+          userId: cart.userId,
+          ref: voucherRef,
+          rows: selectedRows,
+          shipping,
+          payment,
+        })
+      : {
+          priced: priceLines(
+            selectedRows.map((r) => r.input),
+            shipping,
+            payment,
+          ),
+          evaluation: null,
+        };
 
   return {
     id: cart?._id.toString() ?? null,
@@ -235,8 +276,16 @@ async function buildView(cart: CartDocument | null): Promise<CartView> {
         ...(warnings.includes('EXCEEDS_STOCK') ? { available: variant.stockQuantity } : {}),
       };
     }),
-    appliedVoucher: null,
-    summary: priceLines(selectedInputs, shipping, payment).summary,
+    appliedVoucher: evaluation && {
+      id: evaluation.view.voucherId,
+      code: evaluation.view.code,
+      name: evaluation.view.name,
+      valid: evaluation.view.valid,
+      reason: evaluation.view.reason,
+      message: evaluation.view.message,
+      discount: evaluation.view.discount,
+    },
+    summary: selectedPriced.summary,
   };
 }
 
@@ -379,5 +428,65 @@ export async function setSelection(
     setSelected(item, body.isSelected);
   }
   await cart.save();
+  return buildView(cart);
+}
+
+/**
+ * FR-30, API Design 7.3: áp voucher bằng mã hoặc từ ví. Luôn trả kết quả kiểm tra; chỉ voucher hợp lệ
+ * mới được gắn vào giỏ. Giỏ đã có voucher thì từ chối mã mới (`VOUCHER_ALREADY_APPLIED`) cho đến khi gỡ.
+ */
+export async function applyVoucher(
+  userId: Types.ObjectId,
+  body: ApplyVoucherBody,
+): Promise<VoucherView> {
+  const cart = await getOrCreateCart(userId);
+  if (cart.appliedVoucherId) {
+    // Mỗi đơn tối đa một voucher: muốn đổi mã phải gỡ mã cũ trước, kể cả mã cũ đã hết hợp lệ.
+    const current = await VoucherModel.findById(cart.appliedVoucherId).select('code').lean();
+    return {
+      voucherId: null,
+      code: null,
+      name: null,
+      valid: false,
+      reason: 'VOUCHER_ALREADY_APPLIED',
+      message: `Hãy gỡ mã ${current?.code ?? 'giảm giá hiện tại'} trước khi áp mã mới`,
+      discount: 0,
+    };
+  }
+  const items = cart.items.filter(isItemSelected);
+  const [config, contexts] = await Promise.all([
+    getCheckoutConfig(),
+    loadLineContexts(items.map((i) => i.variantId)),
+  ]);
+  const rows = items.flatMap((item): VoucherRow[] => {
+    const ctx = contexts.get(item.variantId.toString());
+    if (
+      !ctx?.variant.shippingTier ||
+      isBlocking(lineWarnings(ctx, item.quantity, item.priceAtAdd))
+    ) {
+      return [];
+    }
+    return [{ ctx, input: toPricingInput(ctx, item) }];
+  });
+
+  const base = priceLines(
+    rows.map((r) => r.input),
+    config.shipping,
+    config.payment,
+  );
+  const { view, voucher } = await evaluateVoucher(userId, body, rows, base);
+  if (view.valid && voucher) {
+    cart.appliedVoucherId = voucher._id;
+    await cart.save();
+  }
+  return view;
+}
+
+export async function removeVoucher(userId: Types.ObjectId): Promise<CartView> {
+  const cart = await CartModel.findOne({ userId });
+  if (cart?.appliedVoucherId) {
+    cart.appliedVoucherId = null;
+    await cart.save();
+  }
   return buildView(cart);
 }

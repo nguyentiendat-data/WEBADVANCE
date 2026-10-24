@@ -27,6 +27,17 @@ export const cartSelectionSchema = z.object({
   isSelected: z.boolean(),
 });
 
+/** Nhập mã hoặc chọn voucher từ ví; đúng một trong hai. */
+export const applyVoucherSchema = z
+  .object({
+    code: z.string().trim().min(1, 'Nhập mã giảm giá').max(50).optional(),
+    userVoucherId: objectId.optional(),
+  })
+  .refine((body) => !!body.code !== !!body.userVoucherId, {
+    message: 'Gửi mã giảm giá hoặc voucher trong ví',
+  });
+
 export type AddCartItemBody = z.infer<typeof addCartItemSchema>;
+export type ApplyVoucherBody = z.infer<typeof applyVoucherSchema>;
 export type UpdateCartItemBody = z.infer<typeof updateCartItemSchema>;
 export type CartSelectionBody = z.infer<typeof cartSelectionSchema>;

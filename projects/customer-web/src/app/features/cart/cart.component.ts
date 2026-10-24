@@ -33,6 +33,9 @@ export class CartComponent {
   );
 
   protected readonly busy = signal(false);
+  protected readonly voucherBusy = signal(false);
+  /** Lý do mã vừa nhập không áp dụng được, hiện ngay dưới ô nhập. */
+  protected readonly voucherNote = signal<string | null>(null);
 
   protected readonly items = computed(() => this.store.cart()?.items ?? []);
   protected readonly summary = computed(() => this.store.cart()?.summary ?? null);
@@ -85,6 +88,43 @@ export class CartComponent {
       this.toast.error(toApiError(err).message);
     } finally {
       this.busy.set(false);
+    }
+  }
+
+  /** FR-30: áp mã giảm giá. Server luôn trả kết quả kiểm tra; không hợp lệ thì hiện lý do. */
+  protected async applyVoucher(event: Event, input: HTMLInputElement): Promise<void> {
+    event.preventDefault();
+    const code = input.value.trim();
+    if (!code) {
+      this.voucherNote.set('Nhập mã giảm giá');
+      return;
+    }
+    this.voucherBusy.set(true);
+    this.voucherNote.set(null);
+    try {
+      const result = await this.store.applyVoucher(code);
+      if (result.valid) {
+        input.value = '';
+        this.toast.success(`Đã áp dụng mã ${result.code}`);
+      } else {
+        this.voucherNote.set(result.message ?? 'Không áp dụng được mã giảm giá');
+      }
+    } catch (err) {
+      this.voucherNote.set(toApiError(err).message);
+    } finally {
+      this.voucherBusy.set(false);
+    }
+  }
+
+  protected async removeVoucher(): Promise<void> {
+    this.voucherBusy.set(true);
+    try {
+      await this.store.removeVoucher();
+      this.voucherNote.set(null);
+    } catch (err) {
+      this.toast.error(toApiError(err).message);
+    } finally {
+      this.voucherBusy.set(false);
     }
   }
 

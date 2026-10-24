@@ -4,6 +4,16 @@ import { createAddressSchema } from '../addresses/address.schema.js';
 const objectId = z.string().regex(/^[0-9a-f]{24}$/i, 'Mã không hợp lệ');
 const text = (max: number) => z.string().trim().min(1, 'Không được để trống').max(max);
 
+/** Voucher chọn ngay tại thanh toán; bỏ trống thì nguồn `CART` dùng voucher đang gắn trong giỏ. */
+const voucherChoice = z
+  .object({
+    code: z.string().trim().min(1).max(50).optional(),
+    userVoucherId: objectId.optional(),
+  })
+  .refine((v) => !!v.code !== !!v.userVoucherId, {
+    message: 'Gửi mã giảm giá hoặc voucher trong ví',
+  });
+
 const buyNowLine = z.object({
   variantId: objectId,
   quantity: z.number().int().min(1, 'Số lượng tối thiểu là 1').max(999),
@@ -15,6 +25,7 @@ const checkoutBase = z.object({
   source: z.enum(['CART', 'BUY_NOW']),
   /** Chỉ dùng với `BUY_NOW`; `CART` lấy các dòng đang chọn trong giỏ. */
   items: z.array(buyNowLine).max(50).nullish(),
+  voucher: voucherChoice.nullish(),
   addressId: objectId.nullish(),
   newAddress: createAddressSchema
     .omit({ isDefault: true })

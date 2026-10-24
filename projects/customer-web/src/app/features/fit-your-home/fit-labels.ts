@@ -1,4 +1,5 @@
-import type { FitPosture, FitStatus, PassageType, WalkwayPassage } from 'shared';
+import type { FitPassageResult, FitPosture, FitStatus, PassageType, WalkwayPassage } from 'shared';
+import type { IconName } from '../../shared/ui/icons/icon.component';
 
 export const PASSAGE_TYPE_NAMES: Record<PassageType, string> = {
   DOOR: 'Cửa ra vào',
@@ -26,6 +27,13 @@ export const POSTURE_NAMES: Record<FitPosture, string> = {
   TILT: 'Đặt nghiêng',
 };
 
+/** Cách đưa kiện lớn nhất qua lối đi theo tư thế server tính được. */
+export const POSTURE_ADVICE: Record<FitPosture, string> = {
+  FLAT: 'đặt nằm ngang, đưa đầu dài vào trước',
+  UPRIGHT: 'dựng đứng, để cạnh dài hướng lên trên',
+  TILT: 'đặt nghiêng chéo để lách qua',
+};
+
 /** Dòng mô tả ngắn của một điểm lối đi, ví dụ "Cửa ra vào ~ 90 × 210cm". */
 export function describePassage(p: WalkwayPassage): string {
   const opening = `${p.width} × ${p.height}cm`;
@@ -33,4 +41,27 @@ export function describePassage(p: WalkwayPassage): string {
   const cabin = `cabin ${p.cabinWidth} × ${p.cabinLength} × ${p.cabinHeight}cm`;
   const load = p.loadCapacityKg ? `, ${p.loadCapacityKg}kg` : '';
   return `Thang máy ~ cửa ${opening}, ${cabin}${load}`;
+}
+
+export const TYPE_ICONS: Record<PassageType, IconName> = {
+  DOOR: 'lucide:door-open',
+  ELEVATOR: 'local:elevator',
+  STAIRS: 'local:stairs',
+  HALLWAY: 'lucide:move-horizontal',
+};
+
+export const STATUS_ICONS: Record<FitStatus, IconName> = {
+  PASS: 'lucide:check',
+  CAUTION: 'lucide:triangle-alert',
+  FAIL: 'lucide:x',
+};
+
+const formatCm = (cm: number): string => String(Math.round(cm * 10) / 10);
+
+/** Câu ngắn dưới mỗi điểm trên hành trình, ví dụ "Dư 50 cm". */
+export function clearanceLabel(stop: Pick<FitPassageResult, 'status' | 'minClearanceCm'>): string {
+  if (stop.status === 'FAIL') return 'Không lọt';
+  if (stop.minClearanceCm === null) return '—';
+  const cm = formatCm(stop.minClearanceCm);
+  return stop.status === 'CAUTION' ? `Sát ${cm} cm` : `Dư ${cm} cm`;
 }

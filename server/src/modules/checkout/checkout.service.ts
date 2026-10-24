@@ -20,9 +20,15 @@ import {
   type DeliveryQuote,
   type DeliverySlot,
 } from './delivery.js';
+import {
+  priceWithVoucher,
+  type VoucherEvaluation,
+  type VoucherRef,
+  type VoucherRow,
+  type VoucherView,
+} from '../vouchers/voucher.service.js';
 import { loadLineContexts, type LineContext } from './line-context.js';
 import {
-  priceLines,
   resolveInstallation,
   type PaymentQuote,
   type PricedLine,
@@ -34,6 +40,7 @@ export type BlockingCode =
   | 'OUT_OF_STOCK'
   | 'EXCEEDS_STOCK'
   | 'VARIANT_UNAVAILABLE'
+  | 'VOUCHER_INVALID'
   | 'ADDRESS_REQUIRED'
   | 'SCHEDULE_INVALID';
 
@@ -42,6 +49,9 @@ export interface BlockingIssue {
   variantId?: string;
   /** Chỉ có với `EXCEEDS_STOCK`. */
   available?: number;
+  /** Chỉ có với `VOUCHER_INVALID`: lý do và câu báo cho khách. */
+  reason?: string;
+  message?: string;
 }
 
 export interface CheckoutItemView extends Pick<CartItemView, 'product' | 'variant'> {
@@ -64,8 +74,8 @@ export interface CheckoutPreview {
   source: CheckoutBody['source'];
   items: CheckoutItemView[];
   summary: PriceSummary;
-  /** Voucher (FR-30) làm sau. */
-  voucher: null;
+  /** Voucher đang áp dụng (nhập tại thanh toán hoặc gắn từ giỏ); `null` khi không dùng voucher. */
+  voucher: VoucherView | null;
   payment: PaymentQuote;
   delivery: DeliveryQuote;
   /** Địa chỉ sẽ giao: `addressId`, `newAddress` hoặc địa chỉ mặc định. */
@@ -81,6 +91,8 @@ export interface CheckoutLine {
 
 export interface CheckoutResult {
   preview: CheckoutPreview;
+  /** Kết quả kiểm tra voucher, để `POST /orders` tiêu lượt dùng. */
+  voucher: VoucherEvaluation | null;
   lines: CheckoutLine[];
   schedule: { scheduledDate: DateOnly; scheduledSlot: DeliverySlot } | null;
   config: CheckoutConfig;
@@ -150,6 +162,14 @@ async function lastInvoiceInfo(userId: Types.ObjectId): Promise<InvoiceInfo | nu
   return order?.invoiceInfo ?? null;
 }
 
+/** Voucher khách chọn tại thanh toán, nếu không thì voucher đang gắn trong giỏ (nguồn `CART`). */
+async function voucherRef(userId: Types.ObjectId, body: CheckoutBody): Promise<VoucherRef | null> {
+  if (body.voucher) return body.voucher;
+  if (body.source !== 'CART') return null;
+  const cart = await CartModel.findOne({ userId }).select('appliedVoucherId').lean();
+  return cart?.appliedVoucherId ? { voucherId: cart.appliedVoucherId } : null;
+}
+
 /**
  * Tính lại toàn bộ đơn từ dữ liệu hiện tại (API Design 8.2). Dùng chung cho `POST /checkout/preview`
  * và `POST /orders`; không ghi gì, không giữ hàng.
@@ -160,7 +180,7 @@ export async function buildCheckout(
   now = new Date(),
 ): Promise<CheckoutResult> {
   const requested = await requestedLines(userId, body);
-  const [contexts, config, address, invoiceInfo] = await Promise.all([
+  const [contexts, config, address, invoiceInfo, ref] = await Promise.all([
     loadLineContexts(
       requested.map((r) => r.variantId),
       now,
@@ -168,6 +188,7 @@ export async function buildCheckout(
     getCheckoutConfig(),
     resolveAddress(userId, body),
     lastInvoiceInfo(userId),
+    voucherRef(userId, body),
   ]);
 
   const issues: BlockingIssue[] = [];
@@ -197,13 +218,25 @@ export async function buildCheckout(
   });
 
   const { shipping, payment } = config;
-  const priced = priceLines(
-    rows.map((r) =>
-      toPricingInput(r.ctx, { quantity: r.req.quantity, hasInstallation: r.hasInstallation }),
-    ),
+  const voucherRows: VoucherRow[] = rows.map((r) => ({
+    ctx: r.ctx,
+    input: toPricingInput(r.ctx, { quantity: r.req.quantity, hasInstallation: r.hasInstallation }),
+  }));
+  const { priced, evaluation } = await priceWithVoucher({
+    userId,
+    ref,
+    rows: voucherRows,
     shipping,
     payment,
-  );
+    now,
+  });
+  if (evaluation && !evaluation.view.valid) {
+    issues.push({
+      code: 'VOUCHER_INVALID',
+      reason: evaluation.view.reason ?? undefined,
+      message: evaluation.view.message ?? undefined,
+    });
+  }
   const delivery = quoteDelivery(
     rows.map((r) => r.ctx.variant.shippingTier ?? 0),
     shipping,
@@ -237,13 +270,14 @@ export async function buildCheckout(
       source: body.source,
       items,
       summary: priced.summary,
-      voucher: null,
+      voucher: evaluation?.view ?? null,
       payment: priced.payment,
       delivery,
       address,
       blockingIssues: issues,
       lastInvoiceInfo: invoiceInfo,
     },
+    voucher: evaluation,
     lines: rows.map((r, i) => ({ ctx: r.ctx, priced: priced.items[i]! })),
     schedule,
     config,

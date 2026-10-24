@@ -5,13 +5,13 @@
     <header class="intro">
       <h1>FIT YOUR HOME</h1>
       <p>
-        Hãy nhập kích thước lối vào của bạn và chúng tôi sẽ so sánh chúng với sản phẩm đã chọn. Tất
-        cả các số đo đều tính bằng centimet.
+        Nhập kích thước lối vào nhà bạn để kiểm tra sản phẩm có vận chuyển vào được không (đơn vị
+        cm).
       </p>
     </header>
 
     <div class="card">
-      <!-- Sản phẩm đang kiểm tra và ô tìm sản phẩm khác -->
+      <!-- Sản phẩm đang kiểm tra (một hàng gọn) và ô đổi sản phẩm kèm lịch sử xem -->
       <div class="top">
         <div class="product">
           @if (fit.product().data; as product) {
@@ -20,10 +20,14 @@
               <a class="product__name" [routerLink]="['/products', product.slug]">{{
                 product.name
               }}</a>
-              @if (fit.variant()?.dimensions; as d) {
-                <p class="muted">{{ d.length }} × {{ d.width }} × {{ d.height }}{{ d.unit }}</p>
-              }
-              <p class="product__price">{{ fit.variant()?.price?.final | vnd }}</p>
+              <p class="product__meta">
+                @if (fit.variant()?.dimensions; as d) {
+                  <span class="muted"
+                    >{{ d.length }} × {{ d.width }} × {{ d.height }}{{ d.unit }}</span
+                  >
+                }
+                <span class="product__price">{{ fit.variant()?.price?.final | vnd }}</span>
+              </p>
               @if (product.variants.length > 1) {
                 <div class="variants" role="radiogroup" aria-label="Chọn biến thể">
                   @for (v of product.variants; track v.id) {
@@ -55,48 +59,50 @@
             <span class="sr-only">Xem sản phẩm khác</span>
             <input
               type="search"
-              placeholder="Xem sản phẩm khác"
+              placeholder="Đổi sản phẩm khác"
               autocomplete="off"
               [value]="fit.searchTerm()"
               (input)="onSearch($event)"
               (focus)="searchOpen.set(true)"
               (keydown.escape)="searchOpen.set(false)"
             />
-            <app-icon name="lucide:search" [size]="20" />
+            <app-icon name="lucide:search" [size]="18" />
           </label>
-          @if (searchOpen() && fit.searchResults().length > 0) {
-            <ul class="search__list" role="listbox" aria-label="Kết quả tìm kiếm">
-              @for (item of fit.searchResults(); track item.id) {
-                <li>
-                  <button type="button" (click)="selectProduct(item.slug)">
-                    <img [src]="item.thumbnail" alt="" />
-                    <span>{{ item.name }}</span>
-                    <span class="muted">{{ item.priceFrom | vnd }}</span>
-                  </button>
-                </li>
-              }
-            </ul>
+          @if (searchOpen()) {
+            @if (fit.searchResults().length > 0) {
+              <div class="search__panel">
+                <ul class="search__list" role="listbox" aria-label="Kết quả tìm kiếm">
+                  @for (item of fit.searchResults(); track item.id) {
+                    <li>
+                      <button type="button" (click)="selectProduct(item.slug)">
+                        <img [src]="item.thumbnail" alt="" />
+                        <span>{{ item.name }}</span>
+                        <span class="muted">{{ item.priceFrom | vnd }}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </div>
+            } @else if (!fit.searchTerm() && fit.history().length > 0) {
+              <div class="search__panel">
+                <p class="caption">Đã xem gần đây</p>
+                <div class="chips">
+                  @for (item of fit.history(); track item.slug) {
+                    <button
+                      type="button"
+                      class="chip chip--sm"
+                      [class.chip--active]="item.slug === fit.slug()"
+                      (click)="selectProduct(item.slug)"
+                    >
+                      {{ item.name }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
           }
         </div>
       </div>
-
-      @if (fit.history().length > 0) {
-        <div class="history">
-          <p class="caption">Lịch sử xem</p>
-          <div class="chips">
-            @for (item of fit.history(); track item.slug) {
-              <button
-                type="button"
-                class="chip"
-                [class.chip--active]="item.slug === fit.slug()"
-                (click)="selectProduct(item.slug)"
-              >
-                {{ item.name }}
-              </button>
-            }
-          </div>
-        </div>
-      }
 
       <div class="layout">
         <!-- Cột trái: hồ sơ lối đi -->
@@ -148,15 +154,46 @@
         <!-- Cột phải: kết quả -->
         <div class="result" aria-live="polite">
           @if (fit.result().data; as r) {
-            <div class="verdict">
-              <h2>
-                <span class="dot" [attr.data-status]="r.status"></span>{{ statusNames[r.status] }}
-              </h2>
-              <p>{{ statusMessages[r.status] }}</p>
-              @if (r.verdict === 'FITS_BY_PARTS') {
-                <p>Kiện nguyên không qua được, nhưng sản phẩm qua được khi tháo rời các bộ phận.</p>
+            @if (banner(); as b) {
+              <div class="banner" [attr.data-status]="b.status">
+                <span class="banner__icon">
+                  <app-icon [name]="statusIcons[b.status]" [size]="22" />
+                </span>
+                <div>
+                  <h2>{{ b.title }}</h2>
+                  <p>{{ b.text }}</p>
+                  @if (b.hint) {
+                    <p class="banner__hint">{{ b.hint }}</p>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Trạng thái từng lối đi, theo thứ tự rồi tới nhà. Sau điểm đầu tiên không qua được thì mờ đi. -->
+            <ol class="journey" aria-label="Kết quả qua từng lối đi vào nhà bạn">
+              @for (s of stops(); track s.index) {
+                <li class="stop" [attr.data-status]="s.status">
+                  <span class="stop__icon"
+                    ><app-icon [name]="typeIcons[s.type]" [size]="20"
+                  /></span>
+                  <span class="stop__name">{{ s.passageLabel }}</span>
+                  <span class="stop__clearance">{{ clearanceLabel(s) }}</span>
+                  @if (s.posture && s.status !== 'FAIL') {
+                    <span class="stop__posture">{{ postureNames[s.posture] }}</span>
+                  }
+                </li>
               }
-            </div>
+              <li
+                class="stop stop--home"
+                [attr.data-status]="r.verdict === 'DOES_NOT_FIT' ? 'FAIL' : 'PASS'"
+              >
+                <span class="stop__icon"><app-icon name="lucide:house" [size]="20" /></span>
+                <span class="stop__name">Nhà bạn</span>
+                <span class="stop__clearance">
+                  {{ r.verdict === 'DOES_NOT_FIT' ? 'Chưa tới được' : 'Tới nơi' }}
+                </span>
+              </li>
+            </ol>
 
             <div class="table-wrap">
               <table>
@@ -193,6 +230,21 @@
               </table>
             </div>
 
+            <div class="cta">
+              @if (r.verdict === 'DOES_NOT_FIT') {
+                <button type="button" class="btn btn--primary" (click)="scrollToSimilar()">
+                  Xem sản phẩm tương tự
+                </button>
+              } @else {
+                <button type="button" class="btn btn--primary" (click)="openPicker('buy')">
+                  Mua ngay
+                </button>
+                <button type="button" class="btn btn--outline" (click)="openPicker('add')">
+                  Thêm vào giỏ
+                </button>
+              }
+            </div>
+
             <p class="muted used">
               Kích thước đã dùng: {{ r.usedDimensions.packageCount }} kiện hàng, kiện lớn nhất
               {{ r.usedDimensions.largest.length }} × {{ r.usedDimensions.largest.width }} ×
@@ -200,7 +252,7 @@
             </p>
 
             <!-- Sản phẩm tương tự vừa nhà -->
-            <div class="similar">
+            <div class="similar" id="similar">
               <h3>Các sản phẩm tương tự vừa với nhà của bạn</h3>
               <label class="switch">
                 <input

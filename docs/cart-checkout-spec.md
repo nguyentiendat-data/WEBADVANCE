@@ -10,7 +10,7 @@ Phạm vi: FR-28 → FR-39 và FR-45 (giỏ hàng, đặt hàng từ giỏ, mua 
 | :-- | :-- | :-- | :-- |
 | Đăng nhập (JWT, `auth.middleware`) | Mọi API giỏ và thanh toán (quyền `U`) | Chưa có, file middleware rỗng | Tạm dùng user seed, middleware dev gán `req.user`; thay khi có auth |
 | Sổ địa chỉ (FR-08, `addresses`) | Chọn địa chỉ giao hàng | Chưa có | Làm tối thiểu: liệt kê, thêm mới, địa chỉ mặc định |
-| Voucher (FR-30) | Áp voucher | Chưa có | Làm sau. UI để sẵn chỗ nhưng ẩn |
+| Voucher (FR-30) | Áp voucher | Nhập mã ở giỏ hàng; thanh toán tính lại giảm giá | Đã làm: nhập mã. Chọn voucher từ ví (`userVoucherId`) có API nhưng chưa có giao diện, chờ ví voucher (FR-11) |
 | Biến thể (`product_variants`) | Giá, tồn kho, cấp vận chuyển, lắp đặt | **Có** | – |
 | Khuyến mãi (`promotions`) | Giá sau khuyến mãi | **Có** | – |
 | Cấu hình (`GET /config/public`) | Phí vận chuyển, ngưỡng cọc, số ngày chuẩn bị | **Có** module `config` | Bổ sung khóa `shipping.leadDays`, `invoice.vatRate` |
@@ -90,7 +90,7 @@ Phạm vi: FR-28 → FR-39 và FR-45 (giỏ hàng, đặt hàng từ giỏ, mua 
 | C5 | Bật/tắt lắp đặt | Chỉ với `OPTIONAL` | `PATCH /cart/items/:id` |
 | C6 | Chọn/bỏ chọn dòng, chọn tất cả | Chỉ dòng được chọn mới tính tiền và đi thanh toán | `PATCH /cart/items/:id`, `PATCH /cart/selection` |
 | C7 | Xóa dòng | Có xác nhận; xóa nhiều dòng đã chọn | `DELETE /cart/items/:id` |
-| C8 | Áp/gỡ voucher *(làm sau)* | Nhập mã hoặc chọn từ ví; hiển thị lý do khi không áp được | `PUT/DELETE /cart/voucher` |
+| C8 | Áp/gỡ voucher | Nhập mã hoặc chọn từ ví; hiển thị lý do khi không áp được | `PUT/DELETE /cart/voucher` |
 | C9 | Tiến hành thanh toán | Chuyển sang `/checkout?source=cart` | – |
 
 ### 2.3. Quy tắc nghiệp vụ
@@ -104,7 +104,7 @@ Phạm vi: FR-28 → FR-39 và FR-45 (giỏ hàng, đặt hàng từ giỏ, mua 
 | BR-C05 | Dòng đã có trong giỏ mà hết hàng: vẫn nằm trong giỏ (FR-29), cảnh báo `OUT_OF_STOCK`, không chọn được để thanh toán, vẫn sửa biến thể hoặc xóa |
 | BR-C06 | Tình trạng hàng chỉ hiển thị 3 mức Còn hàng, Sắp hết, Hết hàng. Số tồn chính xác chỉ hiện khi khách chạm mức tối đa (BR-C03, BR-C04) |
 | BR-C07 | Tạm tính chỉ tính dòng `isSelected = true`. Không có dòng nào được chọn thì nút Thanh toán bị khóa |
-| BR-C08 | Mỗi đơn tối đa 1 voucher, gắn vào giỏ (`appliedVoucherId`), kiểm lại mỗi lần giỏ thay đổi; không còn hợp lệ thì giữ lại, hiện lý do, giảm giá = 0 *(làm sau cùng voucher)* |
+| BR-C08 | Mỗi đơn tối đa 1 voucher, gắn vào giỏ (`appliedVoucherId`), kiểm lại mỗi lần giỏ thay đổi; không còn hợp lệ thì giữ lại, hiện lý do, giảm giá = 0 |
 | BR-C09 | Icon giỏ trên header hiển thị số dòng trong giỏ (badge), cập nhật sau mỗi thao tác |
 | BR-C10 | Các dòng đã đặt bị xóa khỏi giỏ khi tạo đơn. Nếu đơn nguồn giỏ bị hủy khi còn `PENDING_PAYMENT` (hết hạn QR hoặc khách hủy), các dòng được **trả lại vào giỏ** (cộng dồn nếu đã có, không vượt tồn) |
 

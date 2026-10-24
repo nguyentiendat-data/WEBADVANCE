@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DEFAULT_CHECKOUT_CONFIG } from '../config/config.service.js';
 import {
+  calcVoucherDiscount,
   priceLines,
   quotePayment,
   resolveInstallation,
@@ -153,4 +154,83 @@ test('phương thức bị tắt trong cấu hình thì từ chối', () => {
   assert.throws(() => resolvePayment(4_000_000, quote, { method: 'COD', collectionType: 'FULL' }), {
     code: 'PAYMENT_METHOD_DISABLED',
   });
+});
+
+test('voucher giảm trên tiền hàng sau khuyến mãi của dòng đủ điều kiện, không giảm phí', () => {
+  const r = priceLines(
+    [
+      line({
+        variantId: 'sofa',
+        unitPrice: 15_000_000,
+        promotionId: 'p1',
+        unitPromotionDiscount: 1_000_000,
+        shippingTier: 3,
+        hasInstallation: true,
+        unitInstallationFee: 300_000,
+      }),
+      line({ variantId: 'ban', unitPrice: 3_000_000, shippingTier: 1 }),
+    ],
+    shipping,
+    payment,
+    {
+      discountType: 'PERCENT',
+      discountValue: 10,
+      maxDiscountValue: 1_000_000,
+      eligibleVariantIds: new Set(['sofa']),
+    },
+  );
+
+  const [sofa, ban] = r.items;
+  // 10% của 14.000.000 là 1.400.000, bị chặn ở 1.000.000.
+  assert.equal(sofa?.voucherDiscountShare, 1_000_000);
+  assert.equal(sofa?.finalAmount, 13_000_000);
+  assert.equal(ban?.voucherDiscountShare, 0);
+  assert.equal(ban?.finalAmount, 3_000_000);
+  assert.equal(r.summary.voucherDiscount, 1_000_000);
+  // 18.000.000 − 1.000.000 (khuyến mãi) − 1.000.000 (voucher) + 280.000 (vận chuyển) + 300.000 (lắp đặt)
+  assert.equal(r.summary.totalAmount, 16_580_000);
+});
+
+test('phần voucher phân bổ tỉ lệ theo dòng, phần dư làm tròn dồn vào dòng cuối', () => {
+  const r = priceLines(
+    [
+      line({ variantId: 'a', unitPrice: 1_000_000 }),
+      line({ variantId: 'b', unitPrice: 1_000_000 }),
+      line({ variantId: 'c', unitPrice: 1_000_000 }),
+    ],
+    shipping,
+    payment,
+    {
+      discountType: 'FIXED_AMOUNT',
+      discountValue: 100_000,
+      eligibleVariantIds: new Set(['a', 'b', 'c']),
+    },
+  );
+  const shares = r.items.map((i) => i.voucherDiscountShare);
+  assert.deepEqual(shares, [33_333, 33_333, 33_334]);
+  assert.equal(
+    shares.reduce((a, b) => a + b, 0),
+    r.summary.voucherDiscount,
+  );
+  assert.equal(r.summary.voucherDiscount, 100_000);
+});
+
+test('calcVoucherDiscount: phần trăm có trần, số tiền cố định không vượt tiền hàng', () => {
+  const percent = {
+    discountType: 'PERCENT' as const,
+    discountValue: 15,
+    eligibleVariantIds: new Set<string>(),
+  };
+  assert.equal(calcVoucherDiscount(percent, 10_000_000), 1_500_000);
+  assert.equal(
+    calcVoucherDiscount({ ...percent, maxDiscountValue: 1_000_000 }, 10_000_000),
+    1_000_000,
+  );
+  const fixed = {
+    discountType: 'FIXED_AMOUNT' as const,
+    discountValue: 500_000,
+    eligibleVariantIds: new Set<string>(),
+  };
+  assert.equal(calcVoucherDiscount(fixed, 300_000), 300_000);
+  assert.equal(calcVoucherDiscount({ ...fixed, maxDiscountValue: null }, 2_000_000), 500_000);
 });

@@ -58,11 +58,10 @@ export class CartLineComponent {
   protected readonly has = (warning: CartItem['warnings'][number]): boolean =>
     this.item().warnings.includes(warning);
 
-  protected readonly variantText = computed(() => {
-    const { color, material, dimensions } = this.item().variant;
+  protected readonly sizeText = computed(() => {
+    const { dimensions } = this.item().variant;
     // API trả "220x95x85" (cm); hiển thị giống popup chọn biến thể: "220×95×85 cm".
-    const size = dimensions ? `${dimensions.replaceAll('x', '×')} cm` : null;
-    return [color, material, size].filter(Boolean).join(' / ');
+    return dimensions ? `${dimensions.replaceAll('x', '×')} cm` : null;
   });
 
   /** Giá gốc gạch ngang, cùng con số với thẻ sản phẩm và popup chọn biến thể. */

@@ -6,6 +6,7 @@ import { IconComponent } from '../icons/icon.component';
   selector: 'app-quantity-stepper',
   imports: [IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[class.boxed]': 'boxed()' },
   template: `
     <button
       type="button"
@@ -56,6 +57,32 @@ import { IconComponent } from '../icons/icon.component';
       font-size: var(--font-size-h5);
       font-weight: var(--font-weight-medium);
     }
+
+    /* Kiểu giỏ hàng: hai nút xám vuông, ô số có viền ở giữa. */
+    :host(.boxed) {
+      gap: 6px;
+      border: 0;
+    }
+    :host(.boxed) button {
+      width: 36px;
+      border-radius: 3px;
+      background: var(--color-gray-light);
+    }
+    :host(.boxed) button:hover:not(:disabled) {
+      background: var(--color-gray);
+    }
+    :host(.boxed) button:disabled {
+      opacity: 0.5;
+      color: inherit;
+    }
+    :host(.boxed) .value {
+      display: grid;
+      place-items: center;
+      min-width: 52px;
+      height: 100%;
+      border: 1px solid var(--color-gray);
+      border-radius: 4px;
+    }
   `,
 })
 export class QuantityStepperComponent {
@@ -64,5 +91,7 @@ export class QuantityStepperComponent {
   /** `null` là không giới hạn phía client (server vẫn chặn vượt tồn). */
   readonly max = input<number | null>(null);
   readonly disabled = input(false);
+  /** Kiểu nút xám vuông của trang giỏ hàng. */
+  readonly boxed = input(false);
   readonly changed = output<number>();
 }

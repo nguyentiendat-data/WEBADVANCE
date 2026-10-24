@@ -60,6 +60,44 @@ export interface PriceResult {
   payment: PaymentQuote;
 }
 
+/** Quy tắc giảm giá của một voucher đã được kiểm tra hợp lệ (xem `voucher.rules.ts`). */
+export interface VoucherRule {
+  discountType: 'PERCENT' | 'FIXED_AMOUNT';
+  discountValue: number;
+  maxDiscountValue?: number | null;
+  /** Các dòng được giảm; voucher giảm trên tổng tiền hàng sau khuyến mãi của riêng các dòng này. */
+  eligibleVariantIds: ReadonlySet<string>;
+}
+
+/** Mức giảm của voucher trên `base` (tiền hàng sau khuyến mãi), chặn bởi mức tối đa và chính `base`. */
+export function calcVoucherDiscount(rule: VoucherRule, base: number): number {
+  const raw =
+    rule.discountType === 'PERCENT' ? (base * rule.discountValue) / 100 : rule.discountValue;
+  const capped =
+    typeof rule.maxDiscountValue === 'number' ? Math.min(raw, rule.maxDiscountValue) : raw;
+  return Math.max(0, Math.min(Math.round(capped), base));
+}
+
+/**
+ * Phân bổ phần giảm vào từng dòng đủ điều kiện, tỉ lệ theo giá trị dòng; phần dư do làm tròn dồn
+ * vào dòng cuối để tổng các phần đúng bằng mức giảm. Không giảm phí vận chuyển và phí lắp đặt.
+ */
+function allocateVoucher(items: PricedLine[], rule: VoucherRule): void {
+  const eligible = items.filter((l) => rule.eligibleVariantIds.has(l.variantId));
+  const base = eligible.reduce((total, l) => total + l.finalAmount, 0);
+  const discount = base > 0 ? calcVoucherDiscount(rule, base) : 0;
+  if (discount === 0) return;
+
+  let remaining = discount;
+  eligible.forEach((line, i) => {
+    const share =
+      i === eligible.length - 1 ? remaining : Math.floor((discount * line.finalAmount) / base);
+    line.voucherDiscountShare = share;
+    line.finalAmount -= share;
+    remaining -= share;
+  });
+}
+
 /** `REQUIRED` luôn lắp, `NONE` không bao giờ lắp, `OPTIONAL` theo lựa chọn của khách. */
 export function resolveInstallation(
   service: VariantDoc['installationService'],
@@ -72,12 +110,13 @@ export function resolveInstallation(
 
 /**
  * Tính tiền dùng chung cho giỏ, `POST /checkout/preview` và `POST /orders` (spec mục 1.1).
- * Voucher chưa làm nên `voucherDiscount` luôn 0; khi làm chỉ áp trên tiền hàng sau khuyến mãi.
+ * `voucher` (đã kiểm tra hợp lệ) chỉ giảm trên tiền hàng sau khuyến mãi của các dòng đủ điều kiện.
  */
 export function priceLines(
   inputs: PricingInput[],
   shipping: ShippingConfig,
   payment: PaymentConfig,
+  voucher: VoucherRule | null = null,
 ): PriceResult {
   const tierFee = new Map(shipping.tiers.map((t) => [t.tier, t.fee]));
 
@@ -106,13 +145,15 @@ export function priceLines(
     };
   });
 
+  if (voucher) allocateVoucher(items, voucher);
+
   const sum = (pick: (l: PricedLine) => number): number =>
     items.reduce((total, l) => total + pick(l), 0);
   const subtotal = sum((l) => l.pricing.lineTotal);
   const promotionDiscount = sum((l) => l.pricing.promotionDiscount);
   const shippingFee = sum((l) => l.shippingFee);
   const installationFee = sum((l) => l.installationFee);
-  const voucherDiscount = 0;
+  const voucherDiscount = sum((l) => l.voucherDiscountShare);
   const totalAmount =
     subtotal - promotionDiscount - voucherDiscount + shippingFee + installationFee;
 

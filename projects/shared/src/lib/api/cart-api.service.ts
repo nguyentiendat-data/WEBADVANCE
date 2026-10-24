@@ -2,7 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import type { ApiResponse } from '../models/api-response.model';
-import type { AddCartItemRequest, Cart, UpdateCartItemRequest } from '../models/cart.model';
+import type {
+  AddCartItemRequest,
+  ApplyVoucherRequest,
+  Cart,
+  UpdateCartItemRequest,
+  VoucherCheckResult,
+} from '../models/cart.model';
 
 const API_BASE = '/api/v1/cart';
 
@@ -36,5 +42,16 @@ export class CartApiService {
     return this.http
       .patch<ApiResponse<Cart>>(`${API_BASE}/selection`, { isSelected, itemIds })
       .pipe(map((r) => r.data));
+  }
+
+  /** Luôn trả kết quả kiểm tra (200); chỉ voucher hợp lệ mới được gắn vào giỏ. */
+  applyVoucher(body: ApplyVoucherRequest): Observable<VoucherCheckResult> {
+    return this.http
+      .put<ApiResponse<VoucherCheckResult>>(`${API_BASE}/voucher`, body)
+      .pipe(map((r) => r.data));
+  }
+
+  removeVoucher(): Observable<Cart> {
+    return this.http.delete<ApiResponse<Cart>>(`${API_BASE}/voucher`).pipe(map((r) => r.data));
   }
 }

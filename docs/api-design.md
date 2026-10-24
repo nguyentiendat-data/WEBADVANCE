@@ -678,7 +678,7 @@ Mọi field tùy chọn, gửi field nào đổi field đó:
 }
 ```
 
-`warnings`: `PRICE_CHANGED` (`priceAtAdd` khác giá hiện tại), `OUT_OF_STOCK`, `LOW_STOCK`, `EXCEEDS_STOCK` (tồn kho giảm xuống dưới `quantity`; dòng có thêm `"available": N`, chỉ trả số này khi có cảnh báo), `VARIANT_UNAVAILABLE`. Hết hàng/đổi giá vẫn cho sửa hoặc xóa. Dòng có `OUT_OF_STOCK`, `EXCEEDS_STOCK`, `VARIANT_UNAVAILABLE` bị server tự đặt `isSelected = false`, không tự sửa `quantity`. `summary` chỉ tính các dòng `isSelected = true`. `installationFee` của dòng = phí lắp đặt × `quantity`; `variant.unitInstallationFee` là phí cho một sản phẩm để hiển thị ô chọn lắp đặt. `priceAtAdd` và `currentPrice` là giá **một sản phẩm sau khuyến mãi** (giá khách trả), còn `pricing.unitPrice` là giá bán trước khuyến mãi. `appliedVoucher` luôn `null` cho đến khi làm voucher.
+`warnings`: `PRICE_CHANGED` (`priceAtAdd` khác giá hiện tại), `OUT_OF_STOCK`, `LOW_STOCK`, `EXCEEDS_STOCK` (tồn kho giảm xuống dưới `quantity`; dòng có thêm `"available": N`, chỉ trả số này khi có cảnh báo), `VARIANT_UNAVAILABLE`. Hết hàng/đổi giá vẫn cho sửa hoặc xóa. Dòng có `OUT_OF_STOCK`, `EXCEEDS_STOCK`, `VARIANT_UNAVAILABLE` bị server tự đặt `isSelected = false`, không tự sửa `quantity`. `summary` chỉ tính các dòng `isSelected = true`. `installationFee` của dòng = phí lắp đặt × `quantity`; `variant.unitInstallationFee` là phí cho một sản phẩm để hiển thị ô chọn lắp đặt. `priceAtAdd` và `currentPrice` là giá **một sản phẩm sau khuyến mãi** (giá khách trả), còn `pricing.unitPrice` là giá bán trước khuyến mãi. `appliedVoucher` là `null` khi giỏ chưa gắn voucher; voucher đã gắn mà hết hợp lệ vẫn được giữ lại với `valid = false`, `reason`, `message` và `discount = 0` (BR-C08).
 
 ### 7.3. Quy tắc voucher (FR-30 / MA-04)
 

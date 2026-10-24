@@ -4,6 +4,7 @@ import {
   type AddCartItemRequest,
   type Cart,
   type UpdateCartItemRequest,
+  type VoucherCheckResult,
 } from 'shared';
 import { firstValueFrom, type Observable } from 'rxjs';
 
@@ -54,6 +55,20 @@ export class CartStore {
 
   setSelection(isSelected: boolean, itemIds?: string[]): Promise<Cart> {
     return this.apply(this.api.setSelection(isSelected, itemIds));
+  }
+
+  /**
+   * FR-30: áp voucher bằng mã. Luôn trả kết quả kiểm tra; hợp lệ thì tải lại giỏ để có giảm giá mới
+   * (không đổi `status` nên trang không nháy về khung chờ).
+   */
+  async applyVoucher(code: string): Promise<VoucherCheckResult> {
+    const result = await firstValueFrom(this.api.applyVoucher({ code }));
+    if (result.valid) this.cart.set(await firstValueFrom(this.api.get()));
+    return result;
+  }
+
+  removeVoucher(): Promise<Cart> {
+    return this.apply(this.api.removeVoucher());
   }
 
   private async apply(request: Observable<Cart>): Promise<Cart> {

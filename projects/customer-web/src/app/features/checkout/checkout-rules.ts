@@ -122,6 +122,8 @@ export function issueMessage(issue: BlockingIssue, productName?: string): string
       return `${name} chỉ còn ${issue.available ?? 0} sản phẩm`;
     case 'VARIANT_UNAVAILABLE':
       return `${name} đã ngừng bán`;
+    case 'VOUCHER_INVALID':
+      return `Mã giảm giá không dùng được: ${issue.message ?? 'không hợp lệ'}`;
     case 'ADDRESS_REQUIRED':
       return 'Chọn hoặc thêm địa chỉ giao hàng';
     case 'SCHEDULE_INVALID':

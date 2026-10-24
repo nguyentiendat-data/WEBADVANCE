@@ -42,6 +42,49 @@ export interface CartItem {
   available?: number;
 }
 
+/** Lý do voucher không áp dụng được (API Design 7.3). */
+export type VoucherReason =
+  | 'NOT_FOUND'
+  | 'EXPIRED'
+  | 'NOT_STARTED'
+  | 'PAUSED'
+  | 'USAGE_LIMIT_REACHED'
+  | 'PER_USER_LIMIT_REACHED'
+  | 'MIN_ORDER_NOT_MET'
+  | 'SCOPE_NOT_MATCHED'
+  | 'CUSTOMER_GROUP_NOT_ELIGIBLE'
+  | 'NOT_STACKABLE'
+  | 'VOUCHER_ALREADY_APPLIED';
+
+/** Kết quả kiểm tra voucher của `PUT /cart/voucher` và `voucher` trong preview thanh toán. */
+export interface VoucherCheckResult {
+  voucherId: string | null;
+  code: string | null;
+  name: string | null;
+  valid: boolean;
+  reason: VoucherReason | null;
+  message: string | null;
+  /** Số tiền giảm; 0 khi không hợp lệ. */
+  discount: number;
+}
+
+/** Voucher đang gắn vào giỏ. Không còn hợp lệ thì vẫn giữ lại kèm lý do, giảm giá bằng 0. */
+export interface AppliedVoucher {
+  id: string | null;
+  code: string | null;
+  name: string | null;
+  valid: boolean;
+  reason: VoucherReason | null;
+  message: string | null;
+  discount: number;
+}
+
+/** Nhập mã hoặc chọn voucher từ ví; đúng một trong hai. */
+export interface ApplyVoucherRequest {
+  code?: string;
+  userVoucherId?: string;
+}
+
 export interface PriceSummary {
   subtotal: number;
   promotionDiscount: number;
@@ -55,7 +98,7 @@ export interface PriceSummary {
 export interface Cart {
   id: string | null;
   items: CartItem[];
-  appliedVoucher: null;
+  appliedVoucher: AppliedVoucher | null;
   summary: PriceSummary;
 }
 

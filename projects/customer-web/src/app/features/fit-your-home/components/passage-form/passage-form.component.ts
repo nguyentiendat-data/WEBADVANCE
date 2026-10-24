@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import type { PassageType, WalkwayPassage } from 'shared';
 import { IconComponent } from '../../../../shared/ui/icons/icon.component';
-import { PASSAGE_TYPE_NAMES } from '../../fit-labels';
+import { PASSAGE_TYPE_NAMES, TYPE_ICONS } from '../../fit-labels';
 
 const CM = [Validators.required, Validators.min(20), Validators.max(1000)];
 const CABIN_FIELDS = ['cabinWidth', 'cabinLength', 'cabinHeight', 'loadCapacityKg'] as const;
@@ -14,6 +14,66 @@ const OPENING_LABELS: Record<PassageType, [string, string]> = {
   ELEVATOR: ['Cửa rộng', 'Cửa cao'],
   STAIRS: ['Lòng thang rộng', 'Khoảng thông cao'],
   HALLWAY: ['Hành lang rộng', 'Trần cao'],
+};
+
+/** Hướng dẫn đo, đặt ngay cạnh các ô nhập. */
+const MEASURE_HINTS: Record<PassageType, string> = {
+  DOOR: 'Đo chỗ hở nhỏ nhất giữa hai khung cửa, và từ sàn lên thanh ngang phía trên cửa.',
+  ELEVATOR:
+    'Đo cửa thang (rộng × cao) và lòng cabin (rộng × sâu × cao). Tải trọng thường ghi trong cabin.',
+  STAIRS:
+    'Đo khoảng hở giữa hai tay vịn (rộng) và khoảng thông từ mặt bậc lên trần hoặc dầm (cao).',
+  HALLWAY: 'Đo chỗ hẹp nhất của hành lang, và chiều cao từ sàn lên trần.',
+};
+
+/** Số đo phổ biến, bấm để điền nhanh. Các ô không có trong preset giữ nguyên. */
+type Preset = { label: string; values: Partial<Record<keyof FormValue, number>> };
+type FormValue = {
+  width: number;
+  height: number;
+  cabinWidth: number;
+  cabinLength: number;
+  cabinHeight: number;
+  loadCapacityKg: number;
+};
+const PRESETS: Record<PassageType, Preset[]> = {
+  DOOR: [
+    { label: '70 × 200', values: { width: 70, height: 200 } },
+    { label: '80 × 200', values: { width: 80, height: 200 } },
+    { label: '90 × 210', values: { width: 90, height: 210 } },
+  ],
+  ELEVATOR: [
+    {
+      label: 'Chung cư thường',
+      values: {
+        width: 80,
+        height: 200,
+        cabinWidth: 110,
+        cabinLength: 140,
+        cabinHeight: 220,
+        loadCapacityKg: 630,
+      },
+    },
+    {
+      label: 'Thang rộng',
+      values: {
+        width: 90,
+        height: 210,
+        cabinWidth: 140,
+        cabinLength: 160,
+        cabinHeight: 230,
+        loadCapacityKg: 1000,
+      },
+    },
+  ],
+  STAIRS: [
+    { label: '80 × 200', values: { width: 80, height: 200 } },
+    { label: '100 × 220', values: { width: 100, height: 220 } },
+  ],
+  HALLWAY: [
+    { label: '100 × 260', values: { width: 100, height: 260 } },
+    { label: '120 × 270', values: { width: 120, height: 270 } },
+  ],
 };
 
 @Component({
@@ -45,11 +105,24 @@ export class PassageFormComponent {
     ]),
   });
 
-  private readonly type = toSignal(this.form.controls.type.valueChanges, {
+  protected readonly typeIcons = TYPE_ICONS;
+
+  protected readonly type = toSignal(this.form.controls.type.valueChanges, {
     initialValue: this.form.controls.type.value,
   });
   protected readonly isElevator = computed(() => this.type() === 'ELEVATOR');
   protected readonly openingLabels = computed(() => OPENING_LABELS[this.type()]);
+  protected readonly hint = computed(() => MEASURE_HINTS[this.type()]);
+  protected readonly presets = computed(() => PRESETS[this.type()]);
+
+  protected chooseType(type: PassageType): void {
+    this.form.controls.type.setValue(type);
+  }
+
+  protected applyPreset(preset: Preset): void {
+    this.form.patchValue(preset.values);
+    this.form.markAsDirty();
+  }
 
   constructor() {
     effect(() => {

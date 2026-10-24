@@ -1,5 +1,5 @@
 import type { CreateAddressRequest } from './address.model';
-import type { CartItem, PriceSummary } from './cart.model';
+import type { CartItem, PriceSummary, VoucherCheckResult } from './cart.model';
 import type { DeliverySlot } from './public-config.model';
 
 export type CheckoutSource = 'CART' | 'BUY_NOW';
@@ -59,6 +59,7 @@ export interface CreateOrderRequest extends CheckoutRequest {
 
 export type BlockingCode =
   | 'NO_ITEMS'
+  | 'VOUCHER_INVALID'
   | 'OUT_OF_STOCK'
   | 'EXCEEDS_STOCK'
   | 'VARIANT_UNAVAILABLE'
@@ -69,6 +70,9 @@ export interface BlockingIssue {
   code: BlockingCode;
   variantId?: string;
   available?: number;
+  /** Chỉ có với `VOUCHER_INVALID`: lý do và câu báo cho khách. */
+  reason?: string;
+  message?: string;
 }
 
 export interface CheckoutItem extends Pick<CartItem, 'product' | 'variant' | 'pricing'> {
@@ -99,7 +103,7 @@ export interface CheckoutPreview {
   source: CheckoutSource;
   items: CheckoutItem[];
   summary: PriceSummary;
-  voucher: null;
+  voucher: VoucherCheckResult | null;
   payment: {
     methodsAvailable: PaymentMethod[];
     depositRequired: boolean;

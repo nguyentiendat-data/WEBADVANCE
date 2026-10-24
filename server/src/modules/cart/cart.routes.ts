@@ -7,13 +7,23 @@ import { toObjectId } from '../../utils/object-id.js';
 import { sendData } from '../../utils/response.js';
 import {
   addCartItemSchema,
+  applyVoucherSchema,
   cartSelectionSchema,
   updateCartItemSchema,
   type AddCartItemBody,
+  type ApplyVoucherBody,
   type CartSelectionBody,
   type UpdateCartItemBody,
 } from './cart.schema.js';
-import { addItem, getCart, removeItem, setSelection, updateItem } from './cart.service.js';
+import {
+  addItem,
+  applyVoucher,
+  getCart,
+  removeItem,
+  removeVoucher,
+  setSelection,
+  updateItem,
+} from './cart.service.js';
 
 export const cartRoutes = Router();
 
@@ -57,5 +67,20 @@ cartRoutes.patch(
   validateBody(cartSelectionSchema),
   asyncHandler(async (_req, res) => {
     sendData(res, await setSelection(userId(res), res.locals['body'] as CartSelectionBody));
+  }),
+);
+
+cartRoutes.put(
+  '/voucher',
+  validateBody(applyVoucherSchema),
+  asyncHandler(async (_req, res) => {
+    sendData(res, await applyVoucher(userId(res), res.locals['body'] as ApplyVoucherBody));
+  }),
+);
+
+cartRoutes.delete(
+  '/voucher',
+  asyncHandler(async (_req, res) => {
+    sendData(res, await removeVoucher(userId(res)));
   }),
 );
