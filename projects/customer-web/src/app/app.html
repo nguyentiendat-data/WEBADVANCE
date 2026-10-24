@@ -4,8 +4,10 @@
 <main [class.under-header]="solid()">
   <router-outlet />
 </main>
-<app-footer />
-@if (!compact()) {
+@if (!bare()) {
+  <app-footer />
+}
+@if (!compact() && !bare()) {
   <app-floating-actions [showDock]="!isViewYourRoom()" />
 }
 @if (picker.request(); as request) {

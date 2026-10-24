@@ -55,7 +55,9 @@
               }
             ],
             "styles": [
-              "projects/customer-web/src/styles.css"
+              "projects/customer-web/src/styles.css",
+              "projects/customer-web/src/styles/auth-scope.scss",
+              "projects/customer-web/src/app/features/auth/components/auth-layout/auth-layout.component.scss"
             ],
             "polyfills": [
               "zone.js"

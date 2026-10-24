@@ -20,3 +20,7 @@ export * from './lib/models/product.model';
 export * from './lib/models/promotion.model';
 export * from './lib/models/public-config.model';
 export * from './lib/models/showroom.model';
+export * from './lib/enums/role.enum';
+export * from './lib/enums/user.enum';
+export * from './lib/enums/otp.enum';
+export * from './lib/api/auth.api';

@@ -135,7 +135,7 @@ Collection: `categories` (trước đây: `DANHMUC`).
 | 2 | parentId | ObjectId (ref: categories) | | Default: null. Danh mục cha |
 | 3 | name | String | Y | Trimmed. Tên danh mục |
 | 4 | slug | String | Y | Unique. Đường dẫn thân thiện |
-| 5 | type | String | Y | `PRODUCT_CATEGORY` (loại sản phẩm), `ROOM` (phòng), `STYLE` (phong cách) |
+| 5 | type | String | Y | `PRODUCT_CATEGORY` (loại sản phẩm), `ROOM` (phòng) |
 | 6 | description | String | | Default: "". Mô tả |
 | 7 | image | String | | Default: "". Ảnh đại diện |
 | 8 | status | String | Y | Default: `VISIBLE`. `VISIBLE` (hiển thị), `HIDDEN` (ẩn) |
@@ -157,7 +157,7 @@ Collection: `products` (trước đây: `SANPHAM`, kèm các bảng `SANPHAM_DAN
 | 6 | description | String | | Mô tả chi tiết |
 | 7 | searchKeywords | String | | Từ khóa, từ đồng nghĩa hỗ trợ tìm kiếm thủ công và AI |
 | 8 | tags | Array\<String\> | | Nhãn tùy chỉnh do Product Admin nhập (PA-04). Khác nhãn Mới / Bán chạy là nhãn hệ thống |
-| 9 | categoryIds | Array\<ObjectId\> (ref: categories) | | Loại sản phẩm, phòng, phong cách. Thay cho bảng nối |
+| 9 | categoryIds | Array\<ObjectId\> (ref: categories) | | Loại sản phẩm và phòng. Thay cho bảng nối |
 | 10 | seo.title | String | | Tiêu đề SEO |
 | 11 | seo.description | String | | Mô tả SEO |
 | 12 | manualBadges.isNew | String | | Default: null. Admin bật/tắt nhãn Mới: `ON` (ép hiện), `OFF` (ép ẩn), null (theo quy tắc tự động 30 ngày) |

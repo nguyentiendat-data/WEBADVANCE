@@ -1,4 +1,5 @@
 import path from 'node:path';
+import cookieParser from 'cookie-parser';
 import express from 'express';
 import { config } from './config/index.js';
 import { connectDatabase, isDatabaseConnected } from './config/database.js';
@@ -6,7 +7,10 @@ import { errorHandler, notFoundHandler } from './middlewares/error.middleware.js
 import { apiRoutes } from './modules/routes.js';
 
 const app = express();
-app.use(express.json());
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+app.use(express.json({ limit: '1mb' }));
+app.use(cookieParser(config.cookieSecret));
 
 app.get('/api/v1/health', (_req, res) => {
   res.json({

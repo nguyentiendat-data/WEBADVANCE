@@ -1,0 +1,13 @@
+@use 'sass:meta';
+
+// Style trang đăng nhập / đăng ký. Mọi rule nằm trong `.auth-layout` để các class chung tên
+// (`.btn`, `.field`, `.input`, `.alert`…) không đè lên style cửa hàng trong `styles.css`.
+.auth-layout {
+  --danger: #b4342b;
+  --danger-soft: #fdeceb;
+  --success: #176b4d;
+  --success-soft: #e8f5ee;
+  --font-serif: 'Cambria', 'Times New Roman', 'Noto Serif', Georgia, serif;
+
+  @include meta.load-css('./auth');
+}

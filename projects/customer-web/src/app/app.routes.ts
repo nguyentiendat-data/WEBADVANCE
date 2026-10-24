@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -42,6 +43,20 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/checkout/checkout.routes').then((m) => m.CHECKOUT_ROUTES),
   },
-  // Các trang chưa làm (sản phẩm, tìm kiếm, tài khoản...) tạm đưa về trang chủ.
+  {
+    path: 'auth',
+    // Trang đăng nhập/đăng ký có khung riêng nên ẩn header, footer và nút nổi của cửa hàng.
+    data: { layout: 'bare' },
+    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
+  },
+  {
+    path: 'account',
+    canActivate: [authGuard],
+    title: 'Tài khoản | CaraVeso',
+    data: { layout: 'solid' },
+    loadComponent: () =>
+      import('./features/account/account.component').then((m) => m.AccountComponent),
+  },
+  // Các trang chưa làm (sản phẩm, tìm kiếm...) tạm đưa về trang chủ.
   { path: '**', redirectTo: '' },
 ];

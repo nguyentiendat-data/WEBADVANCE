@@ -11,6 +11,19 @@ export const config = {
   googleClientId: process.env['GOOGLE_CLIENT_ID'] ?? '',
   bankWebhookSecret: process.env['BANK_WEBHOOK_SECRET'] ?? '',
   isProduction: process.env['NODE_ENV'] === 'production',
-  /** Chưa có đăng nhập: mọi request của khách được coi là của user này (chỉ ngoài production). */
+  /** Khách chưa gửi token: request được coi là của user này (chỉ ngoài production). */
   devUserId: process.env['DEV_USER_ID'] || '000000000000000000000001',
+  otpEmailFrom: process.env['OTP_EMAIL_FROM'] ?? 'CaraVeso <onboarding@resend.dev>',
+  /** Origin được gọi các endpoint dùng cookie (refresh, logout). */
+  allowedOrigins: (process.env['ALLOWED_ORIGINS'] ?? 'http://localhost:4200,http://localhost:4201')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+  firebaseProjectId: process.env['FIREBASE_PROJECT_ID'],
+  firebaseClientEmail: process.env['FIREBASE_CLIENT_EMAIL'],
+  firebasePrivateKey: process.env['FIREBASE_PRIVATE_KEY'],
+  googleApplicationCredentials: process.env['GOOGLE_APPLICATION_CREDENTIALS'],
+  accessTokenTtl: '15m' as const,
+  customerRefreshTtlSeconds: 7 * 24 * 60 * 60,
+  adminRefreshTtlSeconds: 30 * 60,
 };

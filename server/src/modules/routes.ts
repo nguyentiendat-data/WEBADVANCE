@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { addressRoutes } from './addresses/address.routes.js';
+import { authRouter } from './auth/auth.routes.js';
 import { bannerRoutes } from './banners/banner.routes.js';
 import { cartRoutes } from './cart/cart.routes.js';
 import { categoryRoutes } from './categories/category.routes.js';
@@ -22,6 +23,7 @@ apiRoutes.use('/cart', cartRoutes);
 apiRoutes.use('/categories', categoryRoutes);
 apiRoutes.use('/checkout', checkoutRoutes);
 apiRoutes.use('/collections', collectionRoutes);
+apiRoutes.use('/auth', authRouter);
 apiRoutes.use('/config', configRoutes);
 apiRoutes.use('/fit-your-home', fitYourHomeRoutes);
 apiRoutes.use('/inspirations', inspirationRoutes);
