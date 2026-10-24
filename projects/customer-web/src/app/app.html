@@ -1,8 +1,15 @@
 @if (showHeader()) {
-  <app-header />
+  <app-header [solid]="solid()" />
 }
-<main>
+<main [class.under-header]="solid()">
   <router-outlet />
 </main>
 <app-footer />
-<app-floating-actions [showDock]="!isViewYourRoom()" />
+@if (!compact()) {
+  <app-floating-actions [showDock]="!isViewYourRoom()" />
+}
+@if (picker.request(); as request) {
+  <app-variant-picker [request]="request" />
+}
+<app-toast />
+<app-confirm />
