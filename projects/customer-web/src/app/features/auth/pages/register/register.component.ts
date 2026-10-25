@@ -29,7 +29,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
   selector: 'app-register',
   imports: [AuthLayoutComponent, ReactiveFormsModule, RouterLink, GoogleAuthComponent],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.scss',
+  styleUrl: './register.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegisterComponent implements OnDestroy {

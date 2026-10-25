@@ -10,13 +10,16 @@ export const AUTH_ROUTES: Routes = [
   {
     path: 'register',
     canActivate: [guestGuard],
-    loadComponent: () => import('./pages/register/register.component').then((m) => m.RegisterComponent),
+    loadComponent: () =>
+      import('./pages/register/register.component').then((m) => m.RegisterComponent),
   },
   {
     path: 'forgot-password',
     canActivate: [guestGuard],
     loadComponent: () =>
-      import('./pages/forgot-password/forgot-password.component').then((m) => m.ForgotPasswordComponent),
+      import('./pages/forgot-password/forgot-password.component').then(
+        (m) => m.ForgotPasswordComponent,
+      ),
   },
   { path: '', pathMatch: 'full', redirectTo: 'login' },
 ];

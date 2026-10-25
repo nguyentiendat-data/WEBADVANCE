@@ -12,6 +12,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { CatalogApiService, type Category } from 'shared';
 import { catchError, filter, map, of } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { CartStore } from '../../core/cart/cart.store';
 import { SearchUiService } from '../../core/search/search-ui.service';
 import { IconComponent } from '../../shared/ui/icons/icon.component';
@@ -36,6 +37,7 @@ const SCROLL_THRESHOLD = 24;
 export class HeaderComponent {
   private readonly api = inject(CatalogApiService);
   private readonly router = inject(Router);
+  protected readonly auth = inject(AuthService);
 
   /** Nền trắng chữ đen ngay từ đầu, cho trang không có ảnh lớn đầu trang (giỏ hàng). */
   readonly solid = input(false);

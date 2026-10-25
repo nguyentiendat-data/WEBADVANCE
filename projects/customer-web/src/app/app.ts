@@ -31,8 +31,7 @@ export class App {
 
   /**
    * `data: { layout }` trên route: `'compact'` tự hiển thị header riêng, ẩn header và nút nổi chung;
-   * `'solid'` dùng header chung nhưng nền trắng ngay từ đầu cho trang không có ảnh lớn đầu trang;
-   * `'bare'` ẩn cả header, footer và nút nổi (trang đăng nhập/đăng ký có khung riêng).
+   * `'solid'` dùng header chung nhưng nền trắng ngay từ đầu cho trang không có ảnh lớn đầu trang.
    */
   private readonly layout = toSignal(
     this.router.events.pipe(
@@ -40,13 +39,12 @@ export class App {
       map(() => {
         let route = this.router.routerState.snapshot.root;
         while (route.firstChild) route = route.firstChild;
-        return route.data['layout'] as 'compact' | 'solid' | 'bare' | undefined;
+        return route.data['layout'] as 'compact' | 'solid' | undefined;
       }),
     ),
   );
   protected readonly compact = computed(() => this.layout() === 'compact');
   protected readonly solid = computed(() => this.layout() === 'solid');
-  protected readonly bare = computed(() => this.layout() === 'bare');
 
   /** Trang View your Room có header và thanh tổng quan riêng nên ẩn header chung và hai nút Search/AI. */
   private readonly url = toSignal(
@@ -57,7 +55,5 @@ export class App {
     { initialValue: this.router.url.split(/[?#]/)[0] },
   );
   protected readonly isViewYourRoom = computed(() => this.url() === '/view-your-room');
-  protected readonly showHeader = computed(
-    () => !this.compact() && !this.bare() && !this.isViewYourRoom(),
-  );
+  protected readonly showHeader = computed(() => !this.compact() && !this.isViewYourRoom());
 }

@@ -45,8 +45,8 @@ export const routes: Routes = [
   },
   {
     path: 'auth',
-    // Trang đăng nhập/đăng ký có khung riêng nên ẩn header, footer và nút nổi của cửa hàng.
-    data: { layout: 'bare' },
+    // Header trắng ngay từ đầu vì trang không có ảnh lớn ở đầu trang.
+    data: { layout: 'solid' },
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },
   {

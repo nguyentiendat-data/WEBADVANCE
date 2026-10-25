@@ -3,8 +3,17 @@
     <p class="topbar__promo">
       Chỉ duy nhất 1 lần, tặng voucher 100.000 VND cho khách hàng mới của CaraVeso
     </p>
-    <!-- TODO(FR-02): hiển thị tên khách khi có đăng nhập -->
-    <a class="topbar__account" routerLink="/login">Đăng nhập</a>
+    <div class="topbar__account">
+      @if (auth.user(); as user) {
+        <a routerLink="/account">{{ user.fullName }}</a>
+        <span aria-hidden="true">/</span>
+        <button type="button" class="topbar__logout" (click)="auth.logout()">Đăng xuất</button>
+      } @else {
+        <a routerLink="/auth/login">Đăng nhập</a>
+        <span aria-hidden="true">/</span>
+        <a routerLink="/auth/register">Đăng ký</a>
+      }
+    </div>
   </div>
 </div>
 

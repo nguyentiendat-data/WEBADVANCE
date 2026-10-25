@@ -32,7 +32,8 @@ export async function sendOtpEmail(to: string, code: string, purpose: string): P
         'Hệ thống chưa cấu hình dịch vụ gửi email xác thực',
       );
     }
-    logger.warn({ to, code, purpose }, 'OTP email (dev, chưa cấu hình Resend)');
+    // Đặt tên `otp` (không phải `code`) vì logger che trường `code`; ở dev cần đọc mã này để đăng ký.
+    logger.warn({ to, otp: code, purpose }, 'OTP email (dev, chưa cấu hình Resend)');
     return;
   }
 

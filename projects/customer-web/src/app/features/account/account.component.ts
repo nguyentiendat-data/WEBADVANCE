@@ -13,7 +13,7 @@ const ROLE_LABELS: Record<RoleName, string> = {
 @Component({
   selector: 'app-account',
   templateUrl: './account.component.html',
-  styleUrl: './account.component.scss',
+  styleUrl: './account.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountComponent {

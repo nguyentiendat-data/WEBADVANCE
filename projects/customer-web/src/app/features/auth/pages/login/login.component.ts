@@ -11,7 +11,7 @@ import { GoogleAuthComponent } from '../../components/google-auth/google-auth.co
   selector: 'app-login',
   imports: [AuthLayoutComponent, ReactiveFormsModule, RouterLink, GoogleAuthComponent],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss',
+  styleUrl: './login.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent implements OnDestroy {

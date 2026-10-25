@@ -28,7 +28,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
   selector: 'app-forgot-password',
   imports: [AuthLayoutComponent, ReactiveFormsModule, RouterLink],
   templateUrl: './forgot-password.component.html',
-  styleUrl: './forgot-password.component.scss',
+  styleUrl: './forgot-password.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ForgotPasswordComponent implements OnDestroy {
