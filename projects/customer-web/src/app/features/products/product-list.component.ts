@@ -21,9 +21,9 @@ import {
 import { catchError, map, of, startWith, Subject, switchMap, combineLatest, timer } from 'rxjs';
 import { ProductCardComponent } from '../../shared/ui/product-card/product-card.component';
 import { CatalogIntroComponent } from './catalog-intro.component';
-import { ProductSearchService } from '../../core/search/product-search.service';
 import { IconComponent } from '../../shared/ui/icons/icon.component';
 import { PriceRangeComponent } from './price-range.component';
+import { ImageSearchResultsService } from '../../core/search/image-search-results.service';
 
 interface Result {
   items: ProductListItem[];
@@ -57,7 +57,8 @@ export class ProductListComponent {
   protected readonly route = inject(ActivatedRoute);
   protected readonly router = inject(Router);
   private readonly api = inject(CatalogApiService);
-  private readonly searchData = inject(ProductSearchService);
+  private readonly imageResults = inject(ImageSearchResultsService);
+  protected readonly imageSearch = computed(() => this.params().has('image'));
   protected readonly retry = new Subject<number>();
   private readonly filterUpdates = new Subject<number>();
   protected readonly filtersOpen = signal(false);
@@ -114,10 +115,6 @@ export class ProductListComponent {
     ].filter((group) => group.items.length),
   );
   protected readonly rooms = computed(() => this.categories().filter((c) => c.type === 'ROOM'));
-  protected searchKeyword(q: string): void {
-    this.searchData.remember(q);
-    void this.router.navigate(['/search'], { queryParams: { q: q || null } });
-  }
   protected selectRoom(id: string): void {
     void this.router.navigate(['/products'], { queryParams: { categoryIds: id } });
   }
@@ -302,7 +299,27 @@ export class ProductListComponent {
   });
   protected readonly result = toSignal(
     combineLatest([this.route.queryParamMap, this.retry.pipe(startWith(0))]).pipe(
-      switchMap(([p]) =>
+      switchMap(([p]) => {
+        const imageId = p.get('image');
+        if (imageId) {
+          const saved = this.imageResults.get(imageId);
+          if (!saved) return of({ ...EMPTY, loading: false, error: true });
+          const items = [...saved];
+          switch (p.get('sort')) {
+            case 'price_asc': items.sort((a, b) => a.priceFrom - b.priceFrom); break;
+            case 'price_desc': items.sort((a, b) => b.priceFrom - a.priceFrom); break;
+            case 'name_asc': items.sort((a, b) => a.name.localeCompare(b.name, 'vi')); break;
+            case 'name_desc': items.sort((a, b) => b.name.localeCompare(a.name, 'vi')); break;
+          }
+          const totalPages = Math.ceil(items.length / 12);
+          const page = Math.min(Math.max(1, Number(p.get('page')) || 1), totalPages || 1);
+          return of<Result>({
+            items: items.slice((page - 1) * 12, page * 12),
+            meta: { page, limit: 12, total: items.length, totalPages },
+            loading: false, error: false,
+          });
+        }
+        return (
         this.api
           .getProducts({
             q: p.get('q') ?? undefined,
@@ -324,8 +341,9 @@ export class ProductListComponent {
             map((r): Result => ({ ...r, loading: false, error: false })),
             catchError(() => of({ ...EMPTY, loading: false, error: true })),
             startWith(EMPTY),
-          ),
-      ),
+          )
+        );
+      }),
     ),
     { initialValue: EMPTY },
   );

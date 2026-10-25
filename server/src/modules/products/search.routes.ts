@@ -8,6 +8,8 @@ import { validateQuery } from '../../middlewares/validate.middleware.js';
 import { z } from 'zod';
 import { ProductModel } from './product.model.js';
 import { matchesSearch } from './search.service.js';
+import { downloadImage } from '../../utils/remote-image.js';
+import { readCatalogImage } from './local-image-search.service.js';
 
 export const searchRoutes = Router();
 const imageAttempts = new Map<string, { count: number; until: number }>();
@@ -29,6 +31,31 @@ searchRoutes.post(
   },
   raw({ type: 'multipart/form-data', limit: '6mb' }),
   asyncHandler(async (req, res) => {
+    if (req.is('application/json')) {
+      const input = z.object({ url: z.string().trim().min(1).max(2048) }).safeParse(req.body);
+      if (!input.success) throw new AppError('VALIDATION_ERROR', 400, 'Vui lòng nhập link sản phẩm hoặc ảnh hợp lệ.');
+      const value = input.data.url;
+      let productPath = value.startsWith('/products/') ? value : '';
+      try {
+        const parsed = new URL(value);
+        // Product links are resolved only for this storefront, never arbitrary remote HTML.
+        if (parsed.host === req.get('host') || parsed.origin === req.get('origin')) productPath = parsed.pathname;
+      } catch { /* Relative product paths are accepted; other values are validated by downloadImage. */ }
+      const slug = /^\/products\/([^/]+)\/?$/.exec(productPath)?.[1];
+      let bytes: Buffer;
+      if (slug) {
+        let decodedSlug: string;
+        try { decodedSlug = decodeURIComponent(slug); }
+        catch { throw new AppError('VALIDATION_ERROR', 400, 'Link sản phẩm không hợp lệ.'); }
+        const product = await ProductModel.findOne({ slug: decodedSlug, status: 'ACTIVE' }).lean();
+        const image = product?.media.filter((m) => m.type === 'IMAGE').sort((a, b) => a.displayOrder - b.displayOrder)[0];
+        if (!image) throw new AppError('NOT_FOUND', 404, 'Không tìm thấy ảnh sản phẩm này.');
+        bytes = await readCatalogImage(image.url);
+      } else bytes = await downloadImage(value);
+      const format = detectFile(bytes);
+      sendData(res, await searchByImage(bytes, format.mime));
+      return;
+    }
     const form = await readMultipart(req);
     const image = form.get('image');
     if (!(image instanceof File))

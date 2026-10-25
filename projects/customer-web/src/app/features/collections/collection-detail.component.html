@@ -11,14 +11,12 @@
       @for (image of collection.images; track image.id) {
         <div class="panel">
           <h2>{{ image.title }}</h2>
-          <app-hotspot-image [image]="image" [(active)]="active" />
+          <app-hotspot-image #hotspots [image]="image" />
           <div class="hotspot-list">
             @for (h of image.hotspots; track $index) {
               <button
-                [class.primary]="active() === h.product.id"
-                (focus)="active.set(h.product.id)"
-                (mouseenter)="active.set(h.product.id)"
-                (click)="active.set(h.product.id)"
+                [class.primary]="hotspots.active() === h.product.id"
+                (click)="$event.stopPropagation(); hotspots.active.set(hotspots.active() === h.product.id ? null : h.product.id)"
               >
                 {{ $index + 1 }}. {{ h.product.name }}
               </button>

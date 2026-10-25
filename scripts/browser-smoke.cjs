@@ -40,6 +40,7 @@ async function main() {
     let id = 0;
     const pending = new Map();
     const errors = [];
+    const fileChoosers = [];
     ws.onmessage = ({ data }) => {
       const message = JSON.parse(data);
       if (message.id) {
@@ -54,6 +55,7 @@ async function main() {
             ': ' +
             message.params.exceptionDetails.exception?.description,
         );
+      if (message.method === 'Page.fileChooserOpened') fileChoosers.push(message.params);
     };
     function cdp(method, params = {}) {
       return new Promise((resolve, reject) => {
@@ -92,6 +94,7 @@ async function main() {
       console.log('PASS page', route);
     }
     await cdp('Page.enable');
+    await cdp('Page.setInterceptFileChooserDialog', { enabled: true });
     await cdp('Runtime.enable');
     await cdp('Emulation.setDeviceMetricsOverride', {
       width: 1440,
@@ -99,6 +102,59 @@ async function main() {
       deviceScaleFactor: 1,
       mobile: false,
     });
+    await visit('/', '!!document.querySelector("app-home app-hero-banner")');
+    await until('document.querySelectorAll("app-home app-product-card").length > 0');
+    await js('document.querySelector(".dock__search").click()');
+    await until('document.activeElement === document.querySelector("app-header input[type=search]")');
+    await js('document.querySelector("app-header form.search").requestSubmit()');
+    assert.ok(await js('location.pathname === "/" && !!document.querySelector("app-home")'));
+    await js('document.querySelector(".search__suggestions > button:last-child").click()');
+    await until('!!document.querySelector("dialog:modal .upload-trigger")');
+    assert.ok(await js('location.pathname === "/" && !!document.querySelector("app-home") && document.body.style.overflow === "hidden"'));
+    const uploadFixture = path.join(artifacts, 'upload-test.png');
+    await require('sharp')({ create: { width: 40, height: 30, channels: 3, background: '#d12a24' } }).png().toFile(uploadFixture);
+    async function clickToChoose(selector, corner = false) {
+      const previousCount = fileChoosers.length;
+      const point = await js(`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return {x:r.x+${corner ? '12' : 'r.width/2'},y:r.y+${corner ? '12' : 'r.height/2'}};})()`);
+      await cdp('Input.dispatchMouseEvent', { type: 'mousePressed', button: 'left', clickCount: 1, ...point });
+      await cdp('Input.dispatchMouseEvent', { type: 'mouseReleased', button: 'left', clickCount: 1, ...point });
+      for (let i = 0; i < 30 && fileChoosers.length === previousCount; i++) await delay(100);
+      if (fileChoosers.length === previousCount) console.log('Picker diagnostic', await js(`(()=>{const el=document.elementFromPoint(${point.x},${point.y});const input=document.querySelector('dialog input[type=file]');const style=input&&getComputedStyle(input);return {point:${JSON.stringify(point)},target:el?.outerHTML,input:input?.outerHTML,style:style&&{display:style.display,pointerEvents:style.pointerEvents,position:style.position},modal:!!document.querySelector('dialog:modal'),errors:document.querySelector('vite-error-overlay')?.textContent};})()`));
+      assert.equal(fileChoosers.length, previousCount + 1, 'Real click opens native file chooser: ' + selector);
+      return fileChoosers.at(-1).backendNodeId;
+    }
+    let uploadNode = await clickToChoose('dialog .drop-zone', true);
+    await cdp('DOM.setFileInputFiles', { backendNodeId: uploadNode, files: [uploadFixture] });
+    await until('document.querySelector("dialog .preview")?.naturalWidth > 0');
+    const firstPreview = await js('document.querySelector("dialog .preview").src');
+    uploadNode = await clickToChoose('dialog .text-link');
+    await cdp('DOM.setFileInputFiles', { backendNodeId: uploadNode, files: [uploadFixture] });
+    await until(`document.querySelector('dialog .preview')?.src !== ${JSON.stringify(firstPreview)} && document.querySelector('dialog .preview')?.naturalWidth > 0`);
+    uploadNode = await clickToChoose('dialog .text-link');
+    await cdp('DOM.setFileInputFiles', { backendNodeId: uploadNode, files: [] });
+    assert.ok(await js('!!document.querySelector("dialog .preview")'), 'Cancelling file chooser preserves selected image');
+    await js('document.querySelector("dialog .image-actions button:last-child").click()');
+    await until('!!document.querySelector("dialog .drop-zone-input")');
+    uploadNode = await clickToChoose('dialog .upload-trigger svg');
+    await cdp('DOM.setFileInputFiles', { backendNodeId: uploadNode, files: [] });
+    console.log('PASS real file picker: entire upload zone, icon, image preview, choosing the same file again and cancellation.');
+    const imageProduct = await js(`(async()=>{
+      const list=await (await fetch('/api/v1/products?limit=100')).json();
+      for(const item of list.data){
+        const detail=await (await fetch('/api/v1/products/'+item.slug)).json();
+        if(detail.data?.media?.some(m=>m.type==='IMAGE')) return item.slug;
+      }
+      return null;
+    })()`);
+    assert.ok(imageProduct, 'Catalog has a product image for real image-search verification');
+    await js(`(()=>{document.querySelector('.image-link input').value='/products/'+${JSON.stringify(imageProduct)};document.querySelector('.image-link').requestSubmit();})()`);
+    await until('location.pathname === "/search" && document.querySelectorAll("app-product-list app-product-card").length > 0 && !document.querySelector("dialog")', 45000);
+    assert.ok(await js('new URLSearchParams(location.search).has("image")'));
+    await writeFile(path.join(artifacts,'image-search-results-desktop.png'),Buffer.from((await cdp('Page.captureScreenshot',{format:'png'})).data,'base64'));
+    await js('document.querySelector("app-product-list app-product-card a").click()');
+    await until('!!document.querySelector("app-product-detail") && !document.querySelector("dialog")');
+    assert.ok(await js('document.body.style.overflow !== "hidden"'));
+    console.log('PASS empty keyword, image-search modal, catalog results, real product-link search and result navigation.');
     await visit('/support', 'document.querySelectorAll("app-support-intro .service-card").length === 2');
     await until('!!document.querySelector("app-support-overview .signin-prompt")');
     assert.ok(await js(`document.querySelector('.policy-list details').open && !document.querySelector('.product-search')`));
@@ -130,10 +186,12 @@ async function main() {
       await js('document.documentElement.scrollWidth <= innerWidth'),
       'Desktop horizontal overflow',
     );
-    await js('(()=>{const input=document.querySelector("app-catalog-intro input[type=search]");input.value="ghe";document.querySelector("app-catalog-intro form").requestSubmit();})()');
+    assert.equal(await js('document.querySelectorAll("input[type=search]").length'), 1);
+    await js('(()=>{const input=document.querySelector("app-header input[type=search]");input.value="ghe";input.dispatchEvent(new Event("input",{bubbles:true}));document.querySelector("app-header form").requestSubmit();})()');
     await until('location.pathname === "/search" && new URLSearchParams(location.search).get("q") === "ghe" && document.querySelector("h1").textContent.includes("ghe")');
     await js('history.back()');
     await until('new URLSearchParams(location.search).get("q") === "sofa" && document.querySelector("h1").textContent.includes("sofa")');
+    assert.equal(await js('document.querySelector("app-header input[type=search]").value'), 'sofa');
     if(await js('document.querySelectorAll(".room-links button").length > 0')) {
       await js('document.querySelector(".room-links button").click()');
       await until('location.pathname === "/products" && !!new URLSearchParams(location.search).get("categoryIds") && !new URLSearchParams(location.search).has("q")');
@@ -174,7 +232,7 @@ async function main() {
     await js(`(()=>{const bytes=Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='),c=>c.charCodeAt(0));const input=document.querySelector('app-image-search input[type=file]');const dt=new DataTransfer();dt.items.add(new File([bytes],'chair.png',{type:'image/png'}));input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
     await until(`document.querySelector('app-image-search .preview')?.naturalWidth > 0`);
     await js(`document.querySelector('.image-actions .primary').click()`);
-    await until(`!!document.querySelector('app-image-search .feedback[role=alert], app-image-search .image-results')`);
+    await until(`!!document.querySelector('app-image-search .feedback[role=alert], app-product-list')`);
     assert.ok(await js(`!document.querySelector('app-image-search').textContent.includes('EMBEDDING')`));
     await js(`document.querySelector('.image-actions button:last-child').click()`);
     await until(`!document.querySelector('app-image-search .preview') && !document.querySelector('app-image-search .feedback')`);
@@ -191,6 +249,20 @@ async function main() {
       deviceScaleFactor: 1,
       mobile: true,
     });
+    await visit('/', '!!document.querySelector("app-home")');
+    await js('window.scrollTo(0,500);document.querySelector(".dock__search").click()');
+    await until('document.activeElement === document.querySelector("app-header input[type=search]")');
+    const beforeModalScroll = await js('scrollY');
+    const beforeModalHeroTop = await js('document.querySelector("app-home").getBoundingClientRect().top');
+    await js('document.querySelector(".search__suggestions > button:last-child").click()');
+    await until('!!document.querySelector("dialog:modal")');
+    assert.ok(Math.abs((await js('document.querySelector("app-home").getBoundingClientRect().top')) - beforeModalHeroTop) < 2, 'Opening image modal preserves background position');
+    assert.ok(await js('document.documentElement.scrollWidth <= innerWidth && document.querySelector("dialog").getBoundingClientRect().width <= innerWidth'), 'Mobile modal overflow');
+    await writeFile(path.join(artifacts,'image-search-modal-mobile.png'),Buffer.from((await cdp('Page.captureScreenshot',{format:'png'})).data,'base64'));
+    await cdp('Input.dispatchKeyEvent', {type:'keyDown', key:'Escape', code:'Escape', windowsVirtualKeyCode:27});
+    await cdp('Input.dispatchKeyEvent', {type:'keyUp', key:'Escape', code:'Escape', windowsVirtualKeyCode:27});
+    await until('!document.querySelector("dialog")');
+    assert.equal(await js('scrollY'), beforeModalScroll, 'Closing image modal preserves scroll');
     await visit('/search/image', '!!document.querySelector("app-image-search .drop-zone")');
     assert.ok(await js('document.documentElement.scrollWidth <= innerWidth'), 'Image search mobile overflow');
     await writeFile(path.join(artifacts,'image-search-mobile.png'),Buffer.from((await cdp('Page.captureScreenshot',{format:'png'})).data,'base64'));

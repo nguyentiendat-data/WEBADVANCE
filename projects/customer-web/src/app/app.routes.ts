@@ -1,6 +1,13 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
+  { path: 'cart', loadComponent: () => import('./features/cart/cart.component').then((m) => m.CartComponent) },
+  { path: 'checkout', loadComponent: () => import('./features/cart/cart.component').then((m) => m.CartComponent) },
+  {
+    path: '',
+    pathMatch: 'full',
+    loadChildren: () => import('./features/home/home.routes').then((m) => m.HOME_ROUTES),
+  },
   { path: 'support', loadChildren: () => import('./features/after-sales/after-sales.routes').then((m) => m.AFTER_SALES_ROUTES) },
   { path: 'account/after-sales', redirectTo: '/support', pathMatch: 'full' },
   { path: 'inspirations', loadChildren: () => import('./features/inspirations/inspirations.routes').then((m) => m.INSPIRATIONS_ROUTES) },
@@ -12,11 +19,6 @@ export const routes: Routes = [
   { path: 'search/image', loadChildren: () => import('./features/image-search/image-search.routes').then((m) => m.IMAGE_SEARCH_ROUTES) },
   { path: 'products', loadChildren: () => import('./features/products/products.routes').then((m) => m.PRODUCTS_ROUTES) },
   { path: 'search', loadChildren: () => import('./features/products/products.routes').then((m) => m.PRODUCTS_ROUTES) },
-  {
-    path: '',
-    pathMatch: 'full',
-    loadChildren: () => import('./features/home/home.routes').then((m) => m.HOME_ROUTES),
-  },
   // Các trang chưa làm (sản phẩm, tìm kiếm, giỏ hàng...) tạm đưa về trang chủ.
   { path: '**', redirectTo: '' },
 ];

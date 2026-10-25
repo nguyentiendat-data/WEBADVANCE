@@ -1,16 +1,17 @@
 <section class="feature-page container catalog-page">
   <p class="eyebrow">
-    <a routerLink="/">Trang chủ</a><span>/</span>{{ term() ? 'Tìm kiếm' : 'Sản phẩm' }}
+    <a routerLink="/">Trang chủ</a><span>/</span>{{ imageSearch() ? 'Tìm bằng ảnh' : term() ? 'Tìm kiếm' : 'Sản phẩm' }}
   </p>
   <app-catalog-intro
+    [imageSearch]="imageSearch()"
     [keyword]="term()"
     [rooms]="rooms()"
-    (searchRequested)="searchKeyword($event)"
     (roomSelected)="selectRoom($event)"
   />
 
   <div class="catalog-layout">
     <aside
+      [style.display]="imageSearch() ? 'none' : null"
       #drawer
       class="filters"
       [class.filters--open]="filtersOpen()"
@@ -150,10 +151,11 @@
       </form>
     </aside>
 
-    <div class="catalog-results">
+    <div class="catalog-results" [style.grid-column]="imageSearch() ? '1 / -1' : null">
       <div class="catalog-toolbar">
         <div class="result-summary">
           <button
+            [style.display]="imageSearch() ? 'none' : null"
             #filterToggle
             type="button"
             class="filter-toggle"
@@ -173,10 +175,14 @@
           >Sắp xếp
           <select
             #sortSelect
-            [value]="params().get('sort') || 'newest'"
+            [value]="params().get('sort') || (imageSearch() ? 'similarity' : 'newest')"
             (change)="setSort(sortSelect.value)"
           >
-            <option value="newest">Mới nhất</option>
+            @if (imageSearch()) {
+              <option value="similarity">Giống ảnh nhất</option>
+            } @else {
+              <option value="newest">Mới nhất</option>
+            }
             <option value="price_asc">Giá tăng dần</option>
             <option value="price_desc">Giá giảm dần</option>
             <option value="name_asc">Tên A–Z</option>
@@ -202,7 +208,11 @@
       }
       @if (result().error) {
         <div class="state" role="alert">
-          Không tải được sản phẩm. <button (click)="retry.next(0)">Thử lại</button>
+          @if (imageSearch()) {
+            Kết quả tìm bằng ảnh đã hết phiên. <a routerLink="/search/image">Chọn ảnh để tìm lại</a>
+          } @else {
+            Không tải được sản phẩm. <button (click)="retry.next(0)">Thử lại</button>
+          }
         </div>
       } @else if (result().loading) {
         <div class="product-grid" role="status" aria-label="Đang tải sản phẩm">
@@ -214,7 +224,12 @@
         <div class="state empty-state">
           <span class="empty-symbol"><app-icon name="lucide:search" [size]="28" /></span>
           <h2>Chưa tìm thấy sản phẩm phù hợp</h2>
-          <p>Thử thay đổi khoảng giá hoặc bớt một vài bộ lọc nhé.</p>
+          @if (imageSearch()) {
+            <p>Thử ảnh chụp rõ món đồ, đủ sáng và ít chi tiết nền hơn.</p>
+            <a routerLink="/search/image">Tìm bằng ảnh khác</a>
+          } @else {
+            <p>Thử thay đổi khoảng giá hoặc bớt một vài bộ lọc nhé.</p>
+          }
           @if (chips().length) {
             <button type="button" class="empty-reset" (click)="clear()">Xóa bộ lọc</button>
           }

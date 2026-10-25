@@ -2,8 +2,9 @@
 require('dotenv').config({ quiet: true });
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
-const { randomBytes } = require('node:crypto');
-const { unlink } = require('node:fs/promises');
+const { randomBytes, randomUUID } = require('node:crypto');
+const { unlink, mkdir, writeFile } = require('node:fs/promises');
+const sharp = require('sharp');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const path = require('node:path');
@@ -61,6 +62,11 @@ async function upload(token, purpose) {
 async function main() {
   await mongoose.connect(uri.toString());
   db = mongoose.connection.db;
+  const imageBytes = await sharp({ create: { width: 80, height: 60, channels: 3, background: '#d12a24' } }).png().toBuffer();
+  const imageUrl = '/uploads/evidence/' + randomUUID() + '.png';
+  await mkdir(path.resolve('uploads/evidence'), { recursive: true });
+  await writeFile(path.resolve('.' + imageUrl), imageBytes);
+  uploads.push(imageUrl);
   const role = oid(),
     user = oid(),
     other = oid(),
@@ -100,7 +106,7 @@ async function main() {
       listedAt: new Date(),
       warrantyMonths: 24,
       status: 'ACTIVE',
-      media: [],
+      media: [{ type: 'IMAGE', url: imageUrl, displayOrder: 0 }],
     });
   await db
     .collection('product_variants')
@@ -220,6 +226,28 @@ async function main() {
     body: { identifier: 'verify0@example.invalid', password },
   });
   const token = expect(login, 200).accessToken;
+  const checkoutItems = [{ variantId: variant.toString(), quantity: 2 }];
+  const quoted = expect(await api('/checkout/quote', { body: { items: checkoutItems } }), 200);
+  assert.equal(quoted.totalAmount, 4000000);
+  expect(await api('/checkout/quote', { body: { items: [...checkoutItems, ...checkoutItems] } }), 400);
+  expect(await api('/checkout/quote', { body: { items: [{ ...checkoutItems[0], quantity: 6 }] } }), 409);
+  const checkoutBody = { items: checkoutItems, requestId: randomUUID(), expectedTotal: quoted.totalAmount,
+    shippingAddress: { recipientName: 'Khách kiểm thử', recipientPhone: '0901234567', addressLine: '12 Nguyễn Huệ, TP Hồ Chí Minh' } };
+  expect(await api('/checkout', { body: checkoutBody }), 401);
+  expect(await api('/checkout', { token, body: { ...checkoutBody, expectedTotal: 1 } }), 409);
+  const placed = expect(await api('/checkout', { token, body: checkoutBody }), 201);
+  assert.equal(expect(await api('/checkout', { token, body: checkoutBody }), 200).orderCode, placed.orderCode);
+  assert.equal((await db.collection('product_variants').findOne({ _id: variant })).stockQuantity, 3);
+  const storedOrder = await db.collection('orders').findOne({ orderCode: placed.orderCode });
+  assert.equal(storedOrder.paymentMethod, 'COD');
+  assert.equal(storedOrder.status, 'PENDING');
+  assert.equal(storedOrder.totalAmount, 4000000);
+  const competingOrders = await Promise.all([1, 2].map(() => api('/checkout', { token, body: { ...checkoutBody, requestId: randomUUID() } })));
+  assert.equal(competingOrders.filter((result) => result.status === 201).length, 1);
+  assert.equal(competingOrders.filter((result) => result.status === 409).length, 1);
+  assert.equal((await db.collection('product_variants').findOne({ _id: variant })).stockQuantity, 1);
+  await db.collection('product_variants').updateOne({ _id: variant }, { $set: { stockQuantity: 5 } });
+  console.log('PASS checkout: server pricing, duplicate-line rejection, login, stock, idempotent retry, persisted COD order and concurrent stock protection.');
   const otherToken = expect(
     await api('/auth/login', { body: { identifier: 'verify1@example.invalid', password } }),
     200,
@@ -328,14 +356,28 @@ async function main() {
     new Blob([Buffer.from([255, 216, 255, 0])], { type: 'image/jpeg' }),
     'image.jpg',
   );
-  expect(await api('/search/image', { body: imageForm }), 503);
+  expect(await api('/search/image', { body: imageForm }), 400);
+  const validImage = new FormData();
+  validImage.append('image', new Blob([imageBytes], { type: 'image/png' }), 'chair.png');
+  const imageMatches = expect(await api('/search/image', { body: validImage }), 200);
+  assert.equal(imageMatches[0]?.id, product.toString());
+  assert.equal(imageMatches[0]?.similarity, 1);
+  const linkedMatches = expect(await api('/search/image', { body: { url: '/products/ghe-go-xam' } }), 200);
+  assert.equal(linkedMatches[0]?.id, product.toString());
+  expect(await api('/search/image', { body: { url: 'http://127.0.0.1:3199/api/v1/auth/me' } }), 400);
+  const differentImage = new FormData();
+  differentImage.append('image', new Blob([await sharp({ create: { width: 80, height: 60, channels: 3, background: '#126ac9' } }).png().toBuffer()], { type: 'image/png' }), 'blue.png');
+  assert.deepEqual(expect(await api('/search/image', { body: differentImage }), 200), []);
+  await db.collection('products').updateOne({ _id: product }, { $set: { status: 'HIDDEN' } });
+  assert.deepEqual(expect(await api('/search/image', { body: validImage }), 200), []);
+  await db.collection('products').updateOne({ _id: product }, { $set: { status: 'ACTIVE' } });
   const renewed = await api('/auth/refresh', { cookie: login.cookie, body: {} });
   expect(renewed, 200);
   expect(await api('/auth/refresh', { cookie: login.cookie, body: {} }), 401);
   expect(await api('/auth/logout', { cookie: renewed.cookie, body: {} }), 200);
   expect(await api('/auth/me', { token }), 401);
   console.log(
-    'PASS: real API/MongoDB integration, search, hotspot, auth/refresh/logout, ownership, uploads, warranty, return/exchange, concurrent quantity, cancellation, masking, expired policy and unavailable image provider.',
+    'PASS: real API/MongoDB integration, keyword/image search, product links, image validation, private-URL rejection, hidden-product exclusion, hotspot, auth/refresh/logout, ownership, uploads, warranty, return/exchange, concurrent quantity, cancellation, masking and expired policy.',
   );
 }
 main()

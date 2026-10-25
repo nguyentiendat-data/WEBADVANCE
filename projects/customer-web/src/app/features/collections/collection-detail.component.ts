@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of, switchMap, startWith, Subject, combineLatest } from 'rxjs';
@@ -15,7 +15,6 @@ import { ProductCardComponent } from '../../shared/ui/product-card/product-card.
 export class CollectionDetailComponent {
   private readonly api = inject(CatalogApiService);
   private readonly route = inject(ActivatedRoute);
-  protected readonly active = signal<string | null>(null);
   protected readonly retry = new Subject<number>();
   protected readonly detail = toSignal(
     combineLatest([this.route.paramMap, this.retry.pipe(startWith(0))]).pipe(

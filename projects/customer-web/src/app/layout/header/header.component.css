@@ -384,3 +384,4 @@
     font-size: 32px;
   }
 }
+:host .cart-badge { display: inline-grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 12px; background: var(--color-primary); color: white; font-size: 10px; }

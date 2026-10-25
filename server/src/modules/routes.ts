@@ -12,9 +12,11 @@ import { authRoutes } from './auth/auth.routes.js';
 import { warrantyRoutes } from './after-sales/warranty.routes.js';
 import { uploadRoutes } from './after-sales/upload.routes.js';
 import { returnRoutes } from './after-sales/return.routes.js';
+import { checkoutRoutes } from './checkout/checkout.routes.js';
 
 export const apiRoutes = Router();
 apiRoutes.use('/search', searchRoutes);
+apiRoutes.use('/checkout', checkoutRoutes);
 apiRoutes.use('/auth', authRoutes);
 apiRoutes.use('/uploads', uploadRoutes);
 apiRoutes.use(warrantyRoutes);

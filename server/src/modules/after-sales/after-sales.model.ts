@@ -16,6 +16,10 @@ export interface OrderDoc {
   createdAt: Date;
   totalAmount: number;
   afterSalesVersion?: number;
+  checkoutKey?: string;
+  paymentMethod?: 'COD';
+  paymentStatus?: 'UNPAID';
+  shippingFeeStatus?: 'AWAITING_CONFIRMATION';
 }
 export const OrderModel = model<OrderDoc>(
   'orders',
@@ -36,6 +40,7 @@ export const OrderModel = model<OrderDoc>(
       createdAt: Date,
       totalAmount: Number,
       afterSalesVersion: { type: Number, default: 0 },
+      checkoutKey: { type: String, unique: true, sparse: true },
     },
     { strict: false },
   ),

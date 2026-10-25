@@ -9,6 +9,10 @@ export interface ImageSearchItem extends ProductListItem {
 @Injectable({ providedIn: 'root' })
 export class ImageSearchService {
   private readonly http = inject(HttpClient);
+  searchUrl(url: string) {
+    return this.http.post<ApiResponse<ImageSearchItem[]>>('/api/v1/search/image', { url })
+      .pipe(map((r) => r.data));
+  }
   search(image: File) {
     const body = new FormData();
     body.append('image', image);

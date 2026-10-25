@@ -100,7 +100,7 @@
             @for (item of searchControl.value ? suggestions() : searchData.history(); track item) {
               <button type="button" (click)="submitSearch(item)">{{ item }}</button>
             }
-            <a routerLink="/search/image" (click)="closeSearch()">Tìm sản phẩm bằng hình ảnh</a>
+            <button type="button" (click)="openImageSearch()">Tìm sản phẩm bằng hình ảnh</button>
           </div>
         }
         @if (search.open()) {
@@ -117,7 +117,7 @@
             type="button"
             class="search__action"
             aria-label="Tìm bằng hình ảnh"
-            routerLink="/search/image"
+            (click)="openImageSearch()"
           >
             <app-icon name="lucide:camera" [size]="20" />
           </button>
@@ -131,8 +131,9 @@
         <a class="icon-btn" routerLink="/account" aria-label="Tài khoản">
           <app-icon name="lucide:user" [size]="22" />
         </a>
-        <a class="icon-btn" routerLink="/cart" aria-label="Giỏ hàng">
+        <a class="icon-btn" routerLink="/cart" [attr.aria-label]="'Giỏ hàng, ' + cart.count() + ' sản phẩm'">
           <app-icon name="lucide:shopping-cart" [size]="22" />
+          @if (cart.count()) { <span class="cart-badge">{{ cart.count() }}</span> }
         </a>
       </div>
     </div>

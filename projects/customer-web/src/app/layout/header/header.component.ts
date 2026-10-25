@@ -7,7 +7,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, Router, NavigationEnd } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, switchMap, filter } from 'rxjs';
@@ -17,6 +17,7 @@ import { CatalogApiService, type Category } from 'shared';
 import { catchError, map, of } from 'rxjs';
 import { SearchUiService } from '../../core/search/search-ui.service';
 import { IconComponent } from '../../shared/ui/icons/icon.component';
+import { CartService } from '../../core/shopping/cart.service';
 
 /** Cuộn quá ngưỡng này (px) thì header đổi sang nền trắng. */
 const SCROLL_THRESHOLD = 24;
@@ -36,6 +37,7 @@ const SCROLL_THRESHOLD = 24;
   styleUrl: './header.component.css',
 })
 export class HeaderComponent {
+  protected readonly cart = inject(CartService);
   protected readonly auth = inject(AuthService);
   protected readonly searchControl = new FormControl('', { nonNullable: true });
   protected readonly searchData = inject(ProductSearchService);
@@ -62,10 +64,14 @@ export class HeaderComponent {
 
   protected submitSearch(value = this.searchControl.value): void {
     const q = value.trim();
+    if (!q) {
+      this.search.openSearch();
+      return;
+    }
     this.searchData.remember(q);
     this.searchControl.setValue(q);
     this.closeSearch();
-    void this.router.navigate(['/search'], { queryParams: { q: q || null } });
+    void this.router.navigate(['/search'], { queryParams: { q } });
   }
   private readonly api = inject(CatalogApiService);
 
@@ -85,11 +91,22 @@ export class HeaderComponent {
   protected readonly rooms = () => this.categories().filter((c) => c.type === 'ROOM');
 
   constructor() {
+    const syncKeyword = () => {
+      const tree = this.router.parseUrl(this.router.url);
+      this.searchControl.setValue(tree.queryParams['q'] ?? '');
+    };
+    syncKeyword();
+    this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd), takeUntilDestroyed(),
+    ).subscribe(() => {
+      this.closeSearch();
+      syncKeyword();
+    });
     // Có yêu cầu mở tìm kiếm (từ header hoặc nút nổi ở chân trang): thu menu, đưa con trỏ vào ô.
     effect(() => {
       if (this.search.focusRequest() === 0) return;
       this.menuOpen.set(false);
-      setTimeout(() => this.searchInput()?.nativeElement.focus(), 0);
+      setTimeout(() => this.searchInput()?.nativeElement.focus({ preventScroll: true }), 0);
     });
   }
 
@@ -100,6 +117,11 @@ export class HeaderComponent {
   protected closeSearch(): void {
     this.search.closeSearch();
     this.searchInput()?.nativeElement.blur();
+  }
+
+  protected openImageSearch(): void {
+    this.closeSearch();
+    this.search.openImageSearch();
   }
 
   protected onScroll(): void {
