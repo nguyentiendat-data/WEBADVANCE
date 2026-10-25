@@ -17,8 +17,9 @@ export interface OrderDoc {
   totalAmount: number;
   afterSalesVersion?: number;
 }
+// Cùng collection `orders` với module orders; tên model riêng để không trùng đăng ký trong mongoose.
 export const OrderModel = model<OrderDoc>(
-  'orders',
+  'AfterSalesOrder',
   new Schema<OrderDoc>(
     {
       userId: Schema.Types.ObjectId,
@@ -37,12 +38,15 @@ export const OrderModel = model<OrderDoc>(
       totalAmount: Number,
       afterSalesVersion: { type: Number, default: 0 },
     },
-    { strict: false },
+    { strict: false, collection: 'orders' },
   ),
 );
 export const ShipmentModel = model<{ orderId: Types.ObjectId; actualDeliveryDate?: Date }>(
-  'shipments',
-  new Schema({ orderId: Schema.Types.ObjectId, actualDeliveryDate: Date }, { strict: false }),
+  'AfterSalesShipment',
+  new Schema(
+    { orderId: Schema.Types.ObjectId, actualDeliveryDate: Date },
+    { strict: false, collection: 'shipments' },
+  ),
 );
 export interface WarrantyCardDoc {
   _id: Types.ObjectId;
