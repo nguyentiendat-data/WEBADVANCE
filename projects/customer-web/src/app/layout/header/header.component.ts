@@ -11,9 +11,11 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { CatalogApiService, type Category } from 'shared';
-import { catchError, filter, map, of } from 'rxjs';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { catchError, debounceTime, distinctUntilChanged, filter, map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { CartStore } from '../../core/cart/cart.store';
+import { ProductSearchService } from '../../core/search/product-search.service';
 import { SearchUiService } from '../../core/search/search-ui.service';
 import { IconComponent } from '../../shared/ui/icons/icon.component';
 
@@ -22,7 +24,7 @@ const SCROLL_THRESHOLD = 24;
 
 @Component({
   selector: 'app-header',
-  imports: [RouterLink, IconComponent],
+  imports: [RouterLink, IconComponent, ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.solid]': '!isHome() || solid()',
@@ -43,6 +45,20 @@ export class HeaderComponent {
   readonly solid = input(false);
 
   protected readonly search = inject(SearchUiService);
+  protected readonly searchData = inject(ProductSearchService);
+  protected readonly searchControl = new FormControl('', { nonNullable: true });
+  protected readonly suggestions = toSignal(
+    this.searchControl.valueChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap((q) =>
+        q.trim()
+          ? this.searchData.suggestions(q.trim()).pipe(catchError(() => of<string[]>([])))
+          : of<string[]>([]),
+      ),
+    ),
+    { initialValue: [] as string[] },
+  );
   protected readonly cart = inject(CartStore);
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
@@ -80,6 +96,14 @@ export class HeaderComponent {
 
   protected onSearchFocusOut(event: FocusEvent, form: HTMLElement): void {
     if (!form.contains(event.relatedTarget as Node | null)) this.search.closeSearch();
+  }
+
+  protected submitSearch(value = this.searchControl.value): void {
+    const q = value.trim();
+    this.searchData.remember(q);
+    this.searchControl.setValue(q);
+    this.closeSearch();
+    void this.router.navigate(['/search'], { queryParams: { q: q || null } });
   }
 
   protected closeSearch(): void {

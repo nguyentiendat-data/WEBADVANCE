@@ -28,6 +28,8 @@ export interface ShippingConfig {
 }
 
 export interface PublicConfig {
+  policy?: { returnDays: number; refundDaysMin: number; refundDaysMax: number };
+  limits?: { maxImageSizeMb: number };
   store: StoreInfo;
   payment: PaymentConfig;
   shipping: ShippingConfig;

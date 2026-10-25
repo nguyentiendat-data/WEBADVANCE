@@ -39,6 +39,18 @@ export class CatalogApiService {
     if (query.inStock) params = params.set('inStock', true);
     if (query.minPrice !== undefined) params = params.set('minPrice', query.minPrice);
     if (query.maxPrice !== undefined) params = params.set('maxPrice', query.maxPrice);
+    if (query.color?.length) params = params.set('color', query.color.join(','));
+    if (query.material?.length) params = params.set('material', query.material.join(','));
+    for (const key of [
+      'minLength',
+      'maxLength',
+      'minWidth',
+      'maxWidth',
+      'minHeight',
+      'maxHeight',
+    ] as const) {
+      if (query[key] !== undefined) params = params.set(key, query[key]);
+    }
     if (query.sort) params = params.set('sort', query.sort);
     if (query.page) params = params.set('page', query.page);
     if (query.limit) params = params.set('limit', query.limit);

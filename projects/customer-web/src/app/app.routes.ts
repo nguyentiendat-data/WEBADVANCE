@@ -2,6 +2,14 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
+  { path: 'support', loadChildren: () => import('./features/after-sales/after-sales.routes').then((m) => m.AFTER_SALES_ROUTES) },
+  { path: 'account/after-sales', redirectTo: '/support', pathMatch: 'full' },
+  { path: 'policies', loadChildren: () => import('./features/policies/policies.routes').then((m) => m.POLICIES_ROUTES) },
+  { path: 'account/returns', loadChildren: () => import('./features/returns/returns.routes').then((m) => m.RETURNS_ROUTES) },
+  { path: 'account/warranty', loadChildren: () => import('./features/warranty/warranty.routes').then((m) => m.WARRANTY_ROUTES) },
+  { path: 'search/image', loadChildren: () => import('./features/image-search/image-search.routes').then((m) => m.IMAGE_SEARCH_ROUTES) },
+  { path: 'products', loadChildren: () => import('./features/products/products.routes').then((m) => m.PRODUCTS_ROUTES) },
+  { path: 'search', loadChildren: () => import('./features/products/products.routes').then((m) => m.PRODUCTS_ROUTES) },
   {
     path: '',
     pathMatch: 'full',

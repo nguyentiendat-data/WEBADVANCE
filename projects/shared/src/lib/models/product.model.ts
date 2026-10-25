@@ -28,6 +28,14 @@ export interface ProductListQuery {
   inStock?: boolean;
   minPrice?: number;
   maxPrice?: number;
+  color?: string[];
+  material?: string[];
+  minLength?: number;
+  maxLength?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
   sort?: ProductSort;
   page?: number;
   limit?: number;
