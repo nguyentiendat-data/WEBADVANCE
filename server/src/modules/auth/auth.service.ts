@@ -231,3 +231,36 @@ export async function resetPassword(otpId: string, newPassword: string): Promise
   await user.save();
   await revokeAllSessions(String(user._id));
 }
+
+const ADMIN_MIN_PASSWORD_LENGTH = 12;
+
+/**
+ * API Design 1.6: đổi mật khẩu bằng mật khẩu cũ. Admin cần mật khẩu mới ≥ 12 ký tự và, khi
+ * `mustChangePassword`, chỉ cần `newPassword` ở lần đầu. Tài khoản chưa có mật khẩu (đăng ký bằng
+ * Google) được đặt luôn mà không cần mật khẩu cũ. Xong thì thu hồi mọi phiên.
+ */
+export async function changePassword(
+  userId: string,
+  body: { oldPassword?: string; newPassword: string },
+): Promise<void> {
+  const user = await UserModel.findById(userId)
+    .select('+passwordHash')
+    .populate<{ roleId: IRole }>('roleId', 'name');
+  if (!user) throw new AppError('UNAUTHORIZED', 401, 'Tài khoản không tồn tại');
+
+  const isAdmin = user.roleId.name !== RoleName.CUSTOMER;
+  if (isAdmin && body.newPassword.length < ADMIN_MIN_PASSWORD_LENGTH) {
+    throw new AppError('VALIDATION_ERROR', 400, 'Mật khẩu quản trị cần ít nhất 12 ký tự');
+  }
+  if (user.passwordHash && !user.security.mustChangePassword) {
+    const matches = body.oldPassword
+      ? await bcrypt.compare(body.oldPassword, user.passwordHash)
+      : false;
+    if (!matches) throw new AppError('INVALID_CREDENTIALS', 401, 'Mật khẩu hiện tại không đúng');
+  }
+
+  user.passwordHash = await bcrypt.hash(body.newPassword, BCRYPT_ROUNDS);
+  user.security.mustChangePassword = false;
+  await user.save();
+  await revokeAllSessions(userId);
+}

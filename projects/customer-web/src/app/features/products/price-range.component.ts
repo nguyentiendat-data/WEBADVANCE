@@ -76,12 +76,15 @@ import { catchError, combineLatest, map, of } from 'rxjs';
     .track::after {
       right: -9px;
     }
+    /* Rộng thêm nửa nút (10px) mỗi bên để tâm nút kéo tới được đúng hai chấm ngoài cùng của thanh. */
     input {
       position: absolute;
-      inset: 0;
+      top: 0;
+      left: -10px;
       appearance: none;
       -webkit-appearance: none;
-      width: 100%;
+      width: calc(100% + 20px);
+      max-width: none; /* .feature-page input đặt max-width: 100% */
       height: 24px;
       min-height: 0;
       padding: 0;
@@ -133,6 +136,8 @@ import { catchError, combineLatest, map, of } from 'rxjs';
   `,
 })
 export class PriceRangeComponent {
+  /** Khoảng giá có thật trong kết quả; bỏ trống thì lấy theo toàn cửa hàng. */
+  readonly range = input<{ min: number; max: number } | null>(null);
   readonly minPrice = input('');
   readonly maxPrice = input('');
   readonly priceChanged = output<{ key: 'minPrice' | 'maxPrice'; value: string }>();
@@ -150,13 +155,14 @@ export class PriceRangeComponent {
     ),
     { initialValue: { min: 0, max: 0 } },
   );
+  private readonly baseBounds = computed(() => this.range() ?? this.catalogBounds());
   protected readonly bounds = computed(() => ({
     min: Math.min(
-      this.catalogBounds().min,
+      this.baseBounds().min,
       this.minPrice() === '' ? Infinity : Number(this.minPrice()),
     ),
     max: Math.max(
-      this.catalogBounds().max,
+      this.baseBounds().max,
       Number(this.maxPrice()),
       Number(this.minPrice()),
       this.catalogBounds().min + 1,

@@ -1,4 +1,6 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
+import { OtpPurpose } from '../../lib/shared-enums.js';
+import { ACCOUNT_PURPOSES } from './otp.service.js';
 import { checkOrigin, requireAuth } from '../../middlewares/auth.middleware.js';
 import { rateLimit } from '../../middlewares/rate-limit.middleware.js';
 import { validate } from '../../middlewares/validate.middleware.js';
@@ -14,6 +16,7 @@ import {
   googleLinkHandler,
   googleLinkOtpHandler,
   googleLoginHandler,
+  changePasswordHandler,
 } from './auth.controller.js';
 import {
   loginSchema,
@@ -24,13 +27,21 @@ import {
   googleLoginSchema,
   googleLinkOtpSchema,
   googleLinkSchema,
+  changePasswordSchema,
 } from './auth.schema.js';
 
 export const authRouter = Router();
 
+/** `CHANGE_CONTACT` và `DELETE_ACCOUNT` cần đăng nhập; các mục đích còn lại là công khai. */
+const requireAuthForAccountOtp: RequestHandler = (req, res, next) =>
+  ACCOUNT_PURPOSES.includes((req.body as { purpose?: OtpPurpose }).purpose as OtpPurpose)
+    ? requireAuth(req, res, next)
+    : next();
+
 authRouter.post(
   '/otp/send',
   validate({ body: otpSendSchema }),
+  requireAuthForAccountOtp,
   rateLimit({
     prefix: 'otp:send',
     limit: 20,
@@ -91,4 +102,12 @@ authRouter.post(
   validate({ body: resetPasswordSchema }),
   rateLimit({ prefix: 'auth:reset-password', limit: 10, windowSeconds: 60 * 60 }),
   resetPasswordHandler,
+);
+
+authRouter.post(
+  '/change-password',
+  requireAuth,
+  validate({ body: changePasswordSchema }),
+  rateLimit({ prefix: 'auth:change-password', limit: 10, windowSeconds: 60 * 60 }),
+  changePasswordHandler,
 );

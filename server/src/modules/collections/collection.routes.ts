@@ -15,11 +15,21 @@ collectionRoutes.get(
       .sort({ displayOrder: 1 })
       .lean();
 
+    const covers = collections.map((c) => {
+      const images = [...c.images].sort((a, b) => a.displayOrder - b.displayOrder);
+      return images.find((i) => i.isThumbnail) ?? images[0];
+    });
+    const products = await ProductModel.find({
+      _id: { $in: covers.flatMap((cover) => (cover?.hotspots ?? []).map((h) => h.productId)) },
+      status: 'ACTIVE',
+    }).lean();
+    const itemById = new Map((await buildListItems(products)).map((item) => [item.id, item]));
+
     sendData(
       res,
-      collections.map((c) => {
-        const images = [...c.images].sort((a, b) => a.displayOrder - b.displayOrder);
-        const thumbnail = (images.find((i) => i.isThumbnail) ?? images[0])?.url ?? '';
+      collections.map((c, index) => {
+        const cover = covers[index];
+        const thumbnail = cover?.url ?? '';
         return {
           id: c._id.toString(),
           name: c.name,
@@ -27,6 +37,17 @@ collectionRoutes.get(
           slogan: c.slogan,
           shortDescription: c.shortDescription ?? '',
           thumbnail,
+          /** Ảnh đại diện kèm hotspot, để slider trang chủ cho xem nhanh sản phẩm. */
+          thumbnailImage: cover && {
+            id: cover._id.toString(),
+            url: cover.url,
+            title: cover.title ?? '',
+            description: cover.description ?? '',
+            hotspots: cover.hotspots.flatMap((h) => {
+              const product = itemById.get(h.productId.toString());
+              return product ? [{ slug: product.slug, product, x: h.x, y: h.y }] : [];
+            }),
+          },
         };
       }),
     );
@@ -78,7 +99,7 @@ collectionRoutes.get(
         description: image.description ?? '',
         hotspots: image.hotspots.flatMap((hotspot) => {
           const product = itemById.get(hotspot.productId.toString());
-          return product ? [{ slug: product.slug, x: hotspot.x, y: hotspot.y }] : [];
+          return product ? [{ slug: product.slug, product, x: hotspot.x, y: hotspot.y }] : [];
         }),
       })),
       products: items,

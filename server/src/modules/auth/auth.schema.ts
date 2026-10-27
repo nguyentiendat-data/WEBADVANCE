@@ -20,7 +20,7 @@ const dateOfBirthSchema = z
 
 export const otpSendSchema = z
   .object({
-    purpose: z.enum(['REGISTER', 'FORGOT_PASSWORD']),
+    purpose: z.enum(['REGISTER', 'FORGOT_PASSWORD', 'CHANGE_CONTACT', 'DELETE_ACCOUNT']),
     channel: z.enum(['EMAIL', 'PHONE']),
     target: z.string().trim().min(1, 'Vui lòng nhập email hoặc số điện thoại'),
   })
@@ -65,6 +65,11 @@ export const resetPasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 
+export const changePasswordSchema = z.object({
+  oldPassword: z.string().max(128).optional(),
+  newPassword: passwordSchema,
+});
+
 export const googleLoginSchema = z.object({
   idToken: z
     .string({ error: 'Thiếu mã xác thực Google' })
@@ -97,6 +102,7 @@ export type OtpSendBody = z.infer<typeof otpSendSchema>;
 export type OtpVerifyBody = z.infer<typeof otpVerifySchema>;
 export type RegisterBody = z.infer<typeof registerSchema>;
 export type LoginBody = z.infer<typeof loginSchema>;
+export type ChangePasswordBody = z.infer<typeof changePasswordSchema>;
 export type ResetPasswordBody = z.infer<typeof resetPasswordSchema>;
 export type GoogleLoginBody = z.infer<typeof googleLoginSchema>;
 export type GoogleLinkOtpBody = z.infer<typeof googleLinkOtpSchema>;

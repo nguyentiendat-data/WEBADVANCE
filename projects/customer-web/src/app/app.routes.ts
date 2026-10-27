@@ -60,10 +60,8 @@ export const routes: Routes = [
   {
     path: 'account',
     canActivate: [authGuard],
-    title: 'Tài khoản | CaraVeso',
     data: { layout: 'solid' },
-    loadComponent: () =>
-      import('./features/account/account.component').then((m) => m.AccountComponent),
+    loadChildren: () => import('./features/account/account.routes').then((m) => m.ACCOUNT_ROUTES),
   },
   // Các trang chưa làm (sản phẩm, tìm kiếm...) tạm đưa về trang chủ.
   { path: '**', redirectTo: '' },

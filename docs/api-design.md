@@ -216,6 +216,8 @@ Sai mật khẩu `401 INVALID_CREDENTIALS` (kèm `remainingAttempts`). Khóa `42
 - Quên: `otp/send (FORGOT_PASSWORD)` → `otp/verify` → `POST /auth/forgot-password/reset` body `{ "otpId", "newPassword" }`.
 - Đổi: `POST /auth/change-password` body `{ "oldPassword", "newPassword" }`. Admin mật khẩu mới ≥ 12 ký tự. Admin `mustChangePassword = true` chỉ cần `newPassword` ở lần đầu.
 
+> **Đã code:** mật khẩu mới của khách theo quy tắc FR-01 (≥ 8 ký tự, có chữ, số, ký tự đặc biệt). Tài khoản chưa có mật khẩu (chỉ đăng nhập Google) được đặt luôn, không cần `oldPassword`. Thành công thì thu hồi mọi phiên đăng nhập, khách đăng nhập lại bằng mật khẩu mới. Giới hạn 10 lần mỗi giờ.
+
 ### 1.7. `POST /admin/auth/login`
 
 Cùng body với `/auth/login`. Chỉ chấp nhận tài khoản có role admin. Trả thêm `role`, `mustChangePassword`, `sessionIdleTimeoutSeconds: 1800`.
@@ -227,7 +229,7 @@ Cùng body với `/auth/login`. Chỉ chấp nhận tài khoản có role admin.
 | Method | Path | Quyền | FR | Mô tả |
 | :-- | :-- | :-- | :-- | :-- |
 | GET | `/users/me` | U | FR-06 | Hồ sơ cá nhân |
-| PATCH | `/users/me` | U | FR-06 | Sửa `fullName`, `dateOfBirth`, `avatar` |
+| PATCH | `/users/me` | U | FR-06 | Sửa `fullName`, `dateOfBirth`, `avatar`, `gender` |
 | PUT | `/users/me/contact` | U | FR-07 | Đổi/bổ sung email hoặc SĐT (cần `otpId` đã verify) |
 | POST | `/users/me/delete-request` | U | FR-12 | Yêu cầu xóa (ẩn danh hóa) tài khoản |
 | GET | `/users/me/addresses` | U | FR-08 | Danh sách địa chỉ |
@@ -255,6 +257,8 @@ Cùng body với `/auth/login`. Chỉ chấp nhận tài khoản có role admin.
 
 Nếu `dateOfBirth` thay đổi và `birthDateEditCount >= 2` trả `409 BIRTHDATE_EDIT_LIMIT`. Mỗi lần ghi/đổi ngày sinh thì `birthDateEditCount += 1`.
 
+> **Bổ sung (đã code):** body nhận thêm `gender` (`MALE` | `FEMALE` | `OTHER` | `null`, tùy chọn). `GET /users/me` và `PATCH /users/me` trả `{ id, fullName, email, phoneNumber, avatar, gender, dateOfBirth (YYYY-MM-DD), birthDateEditCount, hasPassword }`; `hasPassword = false` với tài khoản chỉ đăng nhập Google. 
+
 ### 2.2. `PUT /users/me/contact`
 
 ```json
@@ -262,6 +266,8 @@ Nếu `dateOfBirth` thay đổi và `birthDateEditCount >= 2` trả `409 BIRTHDA
 ```
 
 OTP `CHANGE_CONTACT` gửi tới đúng `target` mới và đã verify. Trùng tài khoản khác: `EMAIL_EXISTS` / `PHONE_EXISTS`.
+
+> **Đã code:** `POST /auth/otp/send` nhận `CHANGE_CONTACT` và `DELETE_ACCOUNT` khi có token (`userId` lấy từ token, không tin body); thiếu token trả `401`. `CHANGE_CONTACT` báo `EMAIL_EXISTS` / `PHONE_EXISTS` ngay lúc gửi nếu `target` thuộc tài khoản khác. `DELETE_ACCOUNT` chỉ gửi tới email hoặc SĐT hiện có của chính chủ. `PUT /users/me/contact` kiểm OTP đã verify, đúng người, đúng `channel` và `target`, rồi xóa OTP; response là hồ sơ mới như `GET /users/me`.
 
 ### 2.3. `POST /users/me/delete-request`
 
@@ -305,6 +311,14 @@ Body `POST/PUT`:
 
 Chỉ `ELEVATOR` mới có `cabin*` và `loadCapacityKg`.
 
+> **Bổ sung (đã code):** body có thêm `address` (chuỗi tùy chọn, ≤ 200 ký tự, địa chỉ của căn nhà). Mọi kích thước trong `passages[]` là tùy chọn, 1–2000 cm (hồ sơ nhập tay trên trang tài khoản chỉ có cửa chính, hành lang và thang máy). Response là `{ id, name, address, isDefault, passages[] }`. Hồ sơ đầu tiên tự thành mặc định; xóa hồ sơ mặc định thì hồ sơ cũ nhất còn lại lên mặc định. `PATCH /users/me/walkway-profiles/:id/default` trả hồ sơ vừa đặt.
+
+### 2.6. Yêu thích, ví voucher (phản hồi đã code)
+
+- `GET /users/me/wishlist` trả mảng như phần tử `GET /products` (`id`, `name`, `slug`, `shortDescription`, `thumbnail`, `priceFrom`, `originalPriceFrom`, `hasPromotion`, `badges`, `stockStatus`, `colors`, `isWishlisted = true`) kèm `addedAt`, mới thêm trước; chỉ gồm sản phẩm `ACTIVE`. `POST` và `DELETE` đều idempotent, trả `{ wishlisted: true | false }`.
+- `GET /users/me/vouchers` trả `[{ id, code, name, discountType, discountValue, maxDiscountValue, minOrderValue, status, expiresAt, source }]`. `status` là `UNUSED`, `USED` hoặc `EXPIRED`; voucher chưa dùng mà quá hạn (`expiresAt` riêng hoặc `endDate` của voucher) được trả là `EXPIRED`. Lọc bằng `?status=`.
+- `DELETE /users/me/addresses/:id` trả `{ deleted: true }`.
+
 ---
 
 ## 3. Đơn hàng của tôi, đánh giá (FR-10, FR-13, FR-21)
@@ -335,7 +349,7 @@ Chỉ `ELEVATOR` mới có `cabin*` và `loadCapacityKg`.
 }
 ```
 
-`previewItems` tối đa 3 dòng đầu. Sắp xếp mặc định mới nhất trước. Chỉ trả đơn của khách đang đăng nhập. `status` có thể lọc nhiều giá trị (`?status=SHIPPING,DELIVERED`).
+`previewItems` tối đa 3 dòng đầu (`thumbnail` lấy từ ảnh đại diện của sản phẩm). `estimatedDeliveryDate` lấy từ `shipment`, `null` nếu chưa có. Sắp xếp mặc định mới nhất trước. Chỉ trả đơn của khách đang đăng nhập. `status` có thể lọc nhiều giá trị (`?status=SHIPPING,DELIVERED`).
 
 ### 3.1. `GET /orders/:id`
 
@@ -361,7 +375,7 @@ Response `200` (rút gọn):
 }
 ```
 
-> **Đã code (bản rút gọn cho trang Đặt hàng thành công):** chưa có `items[].actions`, `statusHistory`; có thêm `source`, `note`, `invoiceInfo`, `payment.depositAmount`, `payment.codAmount`. `shipment` chỉ có `status`, `estimatedDeliveryDate`, `scheduledDate`, `scheduledSlot` (ngày dạng `YYYY-MM-DD`). Bổ sung phần còn lại khi làm FR-10.
+> **Đã code:** có thêm `source`, `note`, `invoiceInfo`, `payment.depositAmount`, `payment.codAmount`, `createdAt`. `shipment` có `status`, `estimatedDeliveryDate`, `scheduledDate`, `scheduledSlot`, `actualDeliveryDate` (ngày dạng `YYYY-MM-DD`; chưa có `carrier`, `trackingCode`). `items[].actions` và `statusHistory[]` (`fromStatus`, `toStatus`, `note`, `changedAt`) đã có. `canReview` dùng `policy.reviewDays` (mặc định 90), `canReturn` dùng `policy.returnDays` (mặc định 7) tính từ `actualDeliveryDate`, thiếu thì lấy lần chuyển `DELIVERED`; `canRequestWarranty` đúng khi đơn `DELIVERED` và còn trong `warrantyMonths` của dòng hàng. `reviewId` là đánh giá chưa bị xóa của dòng đó, hoặc `null`.
 
 Các cờ `actions.*` do backend tính (frontend không tự tính hạn): `canReview` = `DELIVERED` và trong 90 ngày kể từ `actualDeliveryDate` và dòng chưa có đánh giá (kể cả đã `DELETED`). `canReturn` = trong 7 ngày kể từ `actualDeliveryDate`. Số ngày lấy từ `system_configs`.
 
@@ -373,7 +387,17 @@ Các cờ `actions.*` do backend tính (frontend không tự tính hạn): `canR
 
 Điều kiện: đơn của chính khách, `DELIVERED`, trong 90 ngày. Mỗi `orderItemId` một đánh giá (unique): trùng thì `REVIEW_ALREADY_EXISTS`. Backend quét từ cấm, liên kết, số điện thoại, spam: vi phạm thì lưu `status = REJECTED` + `rejectReason` và trả `201` với `data.status = "REJECTED"` để frontend thông báo. Ngược lại đăng ngay `VISIBLE` (hậu kiểm).
 
+> **Đã code:** `images` là các URL ảnh khách đã tải lên bằng `POST /uploads` với `purpose = REVIEW_IMAGE` (tối đa 5 ảnh, mỗi ảnh ≤ 5 MB); URL không phải của chính khách trả `400 IMAGE_URL_INVALID`. Quá hạn đánh giá trả `409 REVIEW_WINDOW_EXPIRED`. Bộ lọc (`reviews/review-filter.ts`) từ chối bình luận chứa liên kết, số điện thoại, từ cấm (danh sách rút gọn, so khớp nguyên từ có dấu) hoặc nghi spam (lặp một ký tự ≥ 10 lần hoặc một từ ≥ 5 lần): lưu `REJECTED` kèm `rejectReason`. Response `201` (cũng là response của `PATCH`): `{ id, status, rejectReason }`.
+
 `PATCH /reviews/:id`: body như trên (các field tùy chọn), đặt `isEdited = true`, `editedAt`, chạy lại bộ lọc. `DELETE /reviews/:id`: `status = DELETED`, không cho đánh giá lại dòng đó.
+
+### 3.2a. Phản hồi danh sách đánh giá (đã code)
+
+- `GET /users/me/reviews` trả `[{ id, orderId, orderItemId, orderCode, productId, name, color, sku, image, deliveredAt, rating, comment, images, status, rejectReason, isEdited, createdAt }]`, không gồm đánh giá `DELETED`; mới nhất trước.
+- `GET /products/:productId/reviews?page=&limit=` (`limit` ≤ 20, mặc định 5) trả `{ items, total, page, totalPages, average }` với `items[]` gồm `id`, `customerName`, `avatar`, `rating`, `comment`, `images`, `createdAt`, `isEdited`, `variant` (`sku`, `color`, `dimensions`). Chỉ đánh giá `VISIBLE`.
+- Trang "Đánh giá" của khách lấy các sản phẩm chờ đánh giá từ `GET /orders?status=DELIVERED` rồi `GET /orders/:id` từng đơn, lọc dòng có `actions.canReview`; không có endpoint riêng.
+
+`PATCH` và `DELETE /reviews/:id` chỉ cho chủ đánh giá (người khác nhận `404`); `PATCH` chạy lại bộ lọc nên đánh giá `REJECTED` có thể về `VISIBLE` khi sửa lại, và ngược lại.
 
 ### 3.3. `POST /reviews/:id/reports`
 
@@ -381,7 +405,7 @@ Các cờ `actions.*` do backend tính (frontend không tự tính hạn): `canR
 { "reason": "Chứa thông tin quảng cáo" }
 ```
 
-Mỗi khách báo cáo một đánh giá tối đa một lần (409 nếu trùng). Không tự báo cáo đánh giá của mình. Đưa đánh giá vào hàng chờ của PA-09.
+Mỗi khách báo cáo một đánh giá tối đa một lần (409 nếu trùng). Không tự báo cáo đánh giá của mình (`403 SELF_ACTION_FORBIDDEN`). Đưa đánh giá vào hàng chờ của PA-09. Chỉ báo cáo được đánh giá đang `VISIBLE`; response `201 { reported: true }`; báo cáo được lưu trong `reviews.reports[]`, màn hình duyệt PA-09 chưa code.
 
 ---
 
@@ -515,6 +539,8 @@ Chỉ trả sản phẩm `status = ACTIVE`. Item `ProductListItem`:
   "ratingSummary": { "average": 4.6, "count": 38, "distribution": { "5": 25, "4": 8, "3": 3, "2": 1, "1": 1 } }
 }
 ```
+
+> **Đã code:** `ratingSummary` đã có (tính trên đánh giá `VISIBLE`). Chưa có `shippingFee` cho từng biến thể.
 
 Không trả `stockQuantity`, `lowStockThreshold`, `packages`, `partDimensions` (dữ liệu nội bộ; kích thước kiện chỉ dùng phía server cho Fit your home). Sản phẩm `DRAFT/HIDDEN/DISCONTINUED`: `404`. Đánh giá lấy qua `GET /products/:productId/reviews`.
 

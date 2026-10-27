@@ -21,6 +21,7 @@ export type IconName =
   | 'lucide:hand-coins'
   | 'lucide:qr-code'
   | 'lucide:door-open'
+  | 'lucide:box'
   | 'lucide:move-horizontal'
   | 'local:elevator'
   | 'local:stairs'

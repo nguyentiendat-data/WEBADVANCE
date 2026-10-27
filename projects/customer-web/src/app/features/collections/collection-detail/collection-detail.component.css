@@ -96,36 +96,6 @@
 }
 .tile {
   position: relative;
-  aspect-ratio: 3 / 4;
-  overflow: hidden;
-  background: var(--color-surface);
-}
-.tile img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Điểm chấm trên ảnh, bấm để mở sản phẩm */
-.hotspot {
-  position: absolute;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--color-white);
-  box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-white) 35%, transparent);
-  transform: translate(-50%, -50%);
-  transition: transform 0.2s ease;
-}
-.hotspot::after {
-  content: '';
-  position: absolute;
-  inset: 9px;
-  border-radius: 50%;
-  background: var(--color-black);
-}
-.hotspot:hover {
-  transform: translate(-50%, -50%) scale(1.15);
 }
 
 .list {

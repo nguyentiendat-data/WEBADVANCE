@@ -62,3 +62,14 @@ export async function updateAddress(
   await doc.save();
   return toView(doc);
 }
+
+export async function deleteAddress(userId: Types.ObjectId, addressId: Types.ObjectId): Promise<void> {
+  const doc = await AddressModel.findOne({ _id: addressId, userId });
+  if (!doc) throw new AppError('NOT_FOUND', 404, 'Không tìm thấy địa chỉ');
+  await doc.deleteOne();
+  // Xóa địa chỉ mặc định thì địa chỉ cũ nhất còn lại lên làm mặc định.
+  if (doc.isDefault) {
+    const next = await AddressModel.findOne({ userId }).sort({ _id: 1 });
+    if (next) await AddressModel.updateOne({ _id: next._id }, { isDefault: true });
+  }
+}

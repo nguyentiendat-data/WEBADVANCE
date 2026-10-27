@@ -15,20 +15,18 @@
   position: relative;
   display: block;
   aspect-ratio: 16/7;
-  overflow: hidden;
   background: var(--color-surface);
 }
-.stage__link img {
+.slide {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.5s ease;
 }
-.stage__link img.active {
+.slide.active {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .arrow {

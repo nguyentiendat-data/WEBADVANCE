@@ -1,13 +1,52 @@
-<section class="feature-page container catalog-page">
-  <p class="eyebrow">
-    <a routerLink="/">Trang chủ</a><span>/</span>{{ term() ? 'Tìm kiếm' : 'Sản phẩm' }}
-  </p>
-  <app-catalog-intro
-    [keyword]="term()"
-    [rooms]="rooms()"
-    (searchRequested)="searchKeyword($event)"
-    (roomSelected)="selectRoom($event)"
-  />
+@if (!embedded()) {
+  <nav class="crumbs" aria-label="Đường dẫn">
+    <ol class="container">
+      <li><a routerLink="/">Trang chủ</a></li>
+      <li><app-icon name="lucide:chevron-right" [size]="14" /></li>
+      <li aria-current="page">{{ imageSearch() ? 'Tìm bằng ảnh' : term() ? 'Tìm kiếm' : 'Sản phẩm' }}</li>
+    </ol>
+  </nav>
+}
+
+<section class="container catalog-page feature-page" [class.embedded]="embedded()">
+  <header class="catalog-head">
+    <h1>
+      @if (imageSearch() && imagePreview()) {
+        <img class="head-preview" [src]="imagePreview()" alt="Ảnh bạn đã tải lên" (error)="$any($event.target).hidden = true" />
+      }
+      <span>{{
+        imageSearch()
+          ? 'Sản phẩm có hình ảnh tương tự'
+          : heading()
+            ? heading()
+            : term()
+            ? 'Kết quả cho “' + term() + '”'
+            : 'Sản phẩm'
+      }}</span>
+      @if (!result().loading && !result().error) {
+        <small class="head-count" aria-live="polite">({{ result().meta.total }} sản phẩm)</small>
+      }
+    </h1>
+    <label class="sort-control">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4" /></svg>
+      <span>Sắp xếp theo:</span>
+      <select
+        #sortSelect
+        [value]="params().get('sort') || (imageSearch() ? 'similarity' : 'newest')"
+        (change)="setSort(sortSelect.value)"
+      >
+        @if (imageSearch()) {
+          <option value="similarity">Giống ảnh nhất</option>
+        } @else {
+          <option value="newest">Mặc định</option>
+        }
+        <option value="price_asc">Giá tăng dần</option>
+        <option value="price_desc">Giá giảm dần</option>
+        <option value="name_asc">Tên A–Z</option>
+        <option value="name_desc">Tên Z–A</option>
+      </select>
+    </label>
+  </header>
 
   <div class="catalog-layout">
     <aside
@@ -51,11 +90,14 @@
             <span>Giá <span class="price-unit">(VNĐ)</span></span
             ><span class="chevron" aria-hidden="true"></span>
           </summary>
-          <app-price-range
-            [minPrice]="form.controls.minPrice.value"
-            [maxPrice]="form.controls.maxPrice.value"
-            (priceChanged)="changePriceRange($event)"
-          />
+          @if (facets() !== undefined) {
+            <app-price-range
+              [range]="facets()?.price ?? null"
+              [minPrice]="form.controls.minPrice.value"
+              [maxPrice]="form.controls.maxPrice.value"
+              (priceChanged)="changePriceRange($event)"
+            />
+          }
           <div class="range-fields">
             <label
               ><span class="sr-only">Từ</span>
@@ -101,47 +143,101 @@
                     (change)="toggleCategory(category.id)"
                   />
                   <span>{{ category.name }}</span>
+                  @if (facets()) {
+                    <small class="count">{{ facetCount(category.id) }}</small>
+                  }
                 </label>
               }
             </div>
           </details>
         }
 
-        <div class="filter-section quick-options">
-          <label class="check-row"
-            ><input type="checkbox" formControlName="inStock" /><span>Chỉ còn hàng</span></label
-          >
-          <label class="check-row"
-            ><input type="checkbox" formControlName="hasPromotion" /><span
-              >Đang khuyến mãi</span
-            ></label
-          >
-        </div>
+        @if (facets(); as f) {
+          @if (f.colors.length) {
+            <details class="filter-section">
+              <summary>Màu sắc <span class="chevron" aria-hidden="true"></span></summary>
+              <div class="category-options">
+                @for (color of f.colors; track color.value) {
+                  <label class="check-row">
+                    <input
+                      type="checkbox"
+                      [checked]="optionSelected('color', color.value)"
+                      (change)="toggleOption('color', color.value)"
+                    />
+                    <span>{{ color.value }}</span>
+                    <small class="count">{{ color.count }}</small>
+                  </label>
+                }
+              </div>
+            </details>
+          }
+          @if (f.materials.length) {
+            <details class="filter-section">
+              <summary>Chất liệu <span class="chevron" aria-hidden="true"></span></summary>
+              <div class="category-options">
+                @for (material of f.materials; track material.value) {
+                  <label class="check-row">
+                    <input
+                      type="checkbox"
+                      [checked]="optionSelected('material', material.value)"
+                      (change)="toggleOption('material', material.value)"
+                    />
+                    <span>{{ material.value }}</span>
+                    <small class="count">{{ material.count }}</small>
+                  </label>
+                }
+              </div>
+            </details>
+          }
+        }
 
+        @if (facets()?.inStock || (!onlyPromotion() && facets()?.hasPromotion)) {
+          <div class="filter-section quick-options">
+            @if (facets()?.inStock) {
+              <label class="check-row"
+                ><input type="checkbox" formControlName="inStock" /><span>Chỉ còn hàng</span></label
+              >
+            }
+            @if (!onlyPromotion() && facets()?.hasPromotion) {
+              <label class="check-row"
+                ><input type="checkbox" formControlName="hasPromotion" /><span
+                  >Đang khuyến mãi</span
+                ></label
+              >
+            }
+          </div>
+        }
+
+        @if (facets()?.length || facets()?.badges?.NEW || facets()?.badges?.BEST_SELLER) {
         <details class="filter-section advanced-filters">
           <summary>Bộ lọc khác <span class="chevron" aria-hidden="true"></span></summary>
           <div class="advanced-fields">
-            <label>Màu sắc<input formControlName="color" placeholder="Ví dụ: Be, Xám" /></label>
-            <label>Chất liệu<input formControlName="material" placeholder="Ví dụ: Gỗ sồi" /></label>
-            <div class="dimension-heading">Chiều dài <span>cm</span></div>
-            <div class="range-fields">
-              <label
-                >Từ<input type="number" min="0" formControlName="minLength" placeholder="0"
-              /></label>
-              <span class="range-divider" aria-hidden="true">–</span>
-              <label
-                >Đến<input type="number" min="0" formControlName="maxLength" placeholder="Tối đa"
-              /></label>
-            </div>
+            @if (facets()?.length; as len) {
+              <div class="dimension-heading">Chiều dài <span>cm</span></div>
+              <div class="range-fields">
+                <label
+                  >Từ<input type="number" min="0" formControlName="minLength" [placeholder]="'' + len.min"
+                /></label>
+                <span class="range-divider" aria-hidden="true">–</span>
+                <label
+                  >Đến<input type="number" min="0" formControlName="maxLength" [placeholder]="'' + len.max"
+                /></label>
+              </div>
+            }
             <label
               >Đặc điểm<select formControlName="badge">
                 <option value="">Tất cả sản phẩm</option>
-                <option value="NEW">Hàng mới</option>
-                <option value="BEST_SELLER">Bán chạy</option>
+                @if (facets()?.badges?.NEW) {
+                  <option value="NEW">Hàng mới</option>
+                }
+                @if (facets()?.badges?.BEST_SELLER) {
+                  <option value="BEST_SELLER">Bán chạy</option>
+                }
               </select></label
             >
           </div>
         </details>
+        }
         @if (filterError()) {
           <div class="filter-actions">
             <p class="error" role="alert">{{ filterError() }}</p>
@@ -152,37 +248,18 @@
 
     <div class="catalog-results">
       <div class="catalog-toolbar">
-        <div class="result-summary">
-          <button
-            #filterToggle
-            type="button"
-            class="filter-toggle"
-            [attr.aria-expanded]="filtersOpen()"
-            (click)="openFilters()"
-          >
-            Bộ lọc
-            @if (chips().length) {
-              <span class="filter-count">{{ chips().length }}</span>
-            }
-          </button>
-          <p class="result-total" aria-live="polite">
-            {{ result().loading ? 'Đang tải…' : result().meta.total + ' sản phẩm' }}
-          </p>
-        </div>
-        <label class="sort-control"
-          >Sắp xếp
-          <select
-            #sortSelect
-            [value]="params().get('sort') || 'newest'"
-            (change)="setSort(sortSelect.value)"
-          >
-            <option value="newest">Mới nhất</option>
-            <option value="price_asc">Giá tăng dần</option>
-            <option value="price_desc">Giá giảm dần</option>
-            <option value="name_asc">Tên A–Z</option>
-            <option value="name_desc">Tên Z–A</option>
-          </select>
-        </label>
+        <button
+          #filterToggle
+          type="button"
+          class="filter-toggle"
+          [attr.aria-expanded]="filtersOpen()"
+          (click)="openFilters()"
+        >
+          Bộ lọc
+          @if (chips().length) {
+            <span class="filter-count">{{ chips().length }}</span>
+          }
+        </button>
       </div>
       @if (chips().length) {
         <div class="chips" aria-label="Bộ lọc đang áp dụng">
@@ -202,7 +279,11 @@
       }
       @if (result().error) {
         <div class="state" role="alert">
-          Không tải được sản phẩm. <button (click)="retry.next(0)">Thử lại</button>
+          @if (imageSearch()) {
+            Kết quả tìm bằng ảnh đã hết phiên. <button type="button" class="text-link" (click)="search.openImageSearch()">Chọn ảnh để tìm lại</button>
+          } @else {
+            Không tải được sản phẩm. <button (click)="retry.next(0)">Thử lại</button>
+          }
         </div>
       } @else if (result().loading) {
         <div class="product-grid" role="status" aria-label="Đang tải sản phẩm">
@@ -214,7 +295,12 @@
         <div class="state empty-state">
           <span class="empty-symbol"><app-icon name="lucide:search" [size]="28" /></span>
           <h2>Chưa tìm thấy sản phẩm phù hợp</h2>
-          <p>Thử thay đổi khoảng giá hoặc bớt một vài bộ lọc nhé.</p>
+          @if (imageSearch()) {
+            <p>Thử ảnh chụp rõ món đồ, đủ sáng và ít chi tiết nền hơn.</p>
+            <button type="button" class="text-link" (click)="search.openImageSearch()">Tìm bằng ảnh khác</button>
+          } @else {
+            <p>Thử thay đổi khoảng giá hoặc bớt một vài bộ lọc nhé.</p>
+          }
           @if (chips().length) {
             <button type="button" class="empty-reset" (click)="clear()">Xóa bộ lọc</button>
           }

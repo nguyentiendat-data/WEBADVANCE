@@ -109,27 +109,43 @@
             @for (item of searchControl.value ? suggestions() : searchData.history(); track item) {
               <button type="button" (click)="submitSearch(item)">{{ item }}</button>
             }
-            <a routerLink="/search/image" (click)="closeSearch()">Tìm sản phẩm bằng hình ảnh</a>
+            @if (searchControl.value && productResults().items.length) {
+              <div class="search__items">
+                <p class="search__items-head">
+                  Sản phẩm ({{ productResults().total }} kết quả)
+                  <button type="button" (click)="submitSearch()">Xem tất cả</button>
+                </p>
+                <div class="search__items-grid">
+                  @for (product of productResults().items; track product.id) {
+                    <a [routerLink]="['/products', product.slug]" (click)="closeSearch()">
+                      <img [src]="product.thumbnail" [alt]="product.name" loading="lazy" />
+                      <span>
+                        <strong>{{ product.name }}</strong>
+                        <small>{{ product.priceFrom | vnd }}</small>
+                      </span>
+                    </a>
+                  }
+                </div>
+              </div>
+            }
           </div>
         }
+        <button
+          type="button"
+          class="search__action"
+          aria-label="Tìm bằng hình ảnh"
+          (click)="openImageSearch()"
+        >
+          <app-icon name="lucide:camera" [size]="20" />
+        </button>
         @if (search.open()) {
           <button
             type="button"
             class="search__action"
-            aria-label="Đóng tìm kiếm"
-            (click)="closeSearch()"
+            [attr.aria-label]="searchControl.value ? 'Xóa từ khóa' : 'Đóng tìm kiếm'"
+            (click)="clearOrClose()"
           >
             <app-icon name="lucide:x" [size]="20" />
-          </button>
-        } @else {
-          <button
-            type="button"
-            class="search__action"
-            aria-label="Tìm bằng hình ảnh"
-            routerLink="/search/image"
-            (click)="closeSearch()"
-          >
-            <app-icon name="lucide:camera" [size]="20" />
           </button>
         }
       </form>

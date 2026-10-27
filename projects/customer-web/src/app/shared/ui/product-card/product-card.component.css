@@ -34,13 +34,16 @@
   place-items: center;
   width: 32px;
   height: 32px;
+  min-width: 0;
+  min-height: 0; /* trang .feature-page đặt min-height cho mọi nút, làm nút bị méo */
   padding: 0;
   border: 0;
   border-radius: 50%;
   background: color-mix(in srgb, var(--color-white) 90%, transparent);
   color: var(--color-muted);
 }
-.wish:hover {
+.wish:hover,
+.wish--on {
   color: var(--color-accent);
 }
 

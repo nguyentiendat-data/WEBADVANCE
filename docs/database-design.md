@@ -34,6 +34,7 @@ Collection: `users` (trước đây: `NGUOIDUNG`). Dùng chung cho khách hàng 
 | 8 | profile.fullName | String | Y | Họ tên |
 | 9 | profile.dateOfBirth | Date | | Default: null. Ngày sinh |
 | 10 | profile.birthDateEditCount | Number | | Default: 0. Số lần đã nhập ngày sinh, tối đa 2 (tính cả lần đầu) |
+| 10a | profile.gender | String | | Default: null. Giới tính: `MALE`, `FEMALE`, `OTHER` (bổ sung cho trang Tài khoản của tôi) |
 | 11 | avatar | String | | Default: "". Đường dẫn ảnh đại diện |
 | 12 | termsAccepted | Boolean | | Đã đồng ý điều khoản khi đăng ký. Bắt buộc là true với khách hàng. Tài khoản Admin do Admin cấp cao tạo nên không áp dụng |
 | 13 | termsAcceptedAt | Date | | Thời điểm đồng ý điều khoản |
@@ -107,6 +108,7 @@ Collection: `walkway_profiles` (mới). Lưu kích thước lối đi trong nhà
 | 1 | _id | ObjectId | Y | Mã định danh của hồ sơ lối đi, do MongoDB tự sinh |
 | 2 | userId | ObjectId (ref: users) | Y | Index. Khách hàng sở hữu |
 | 3 | name | String | Y | Tên hồ sơ, ví dụ "Nhà chung cư" |
+| 3a | address | String | | Địa chỉ căn nhà của hồ sơ (bổ sung, hiển thị ở trang Hồ sơ nhà) |
 | 4 | isDefault | Boolean | | Default: false. Hồ sơ mặc định, mỗi khách tối đa một |
 | 5 | passages | Array\<Object\> | | Danh sách lối đi |
 | 6 | passages[].type | String | Y | `DOOR` (cửa), `ELEVATOR` (thang máy), `STAIRS` (cầu thang), `HALLWAY` (hành lang) |
@@ -820,7 +822,7 @@ Collection: `system_configs` (trước đây: `CAU_HINH_HE_THONG`). Dạng khóa
 | 3 | description | String | | Mô tả ý nghĩa |
 | 4 | updatedBy | ObjectId (ref: users) | Y | Admin cập nhật gần nhất |
 
-**Các khóa cấu hình cần có:** số ngày đổi/trả (7), thời hạn đánh giá (90 ngày), hạn thanh toán QR (15 phút), ngưỡng đặt cọc (20.000.000đ), tỷ lệ cọc (30%), số ngày trễ được bù (2), giá trị voucher bù (100.000đ), hạn voucher bù (30 ngày), thời gian hoàn tiền (3–7 ngày làm việc), số giờ coi đơn chờ xác nhận là quá hạn (cho Dashboard AD-02), số ngày nhãn Mới (30), ngưỡng nhãn Bán chạy (top 10%, tối thiểu 5 sản phẩm đã bán), bảng phí 4 cấp vận chuyển, số ngày chuẩn bị giao theo cấp (cấp 1–2: 3, cấp 3–4: 5 ngày làm việc), khung giờ giao, số lần đổi lịch (2), số lần giao lại (2), ngưỡng cảnh báo tồn kho mặc định, số lần đăng nhập sai (3), thời gian khóa (1 phút), hạn OTP (5 phút), số lần nhập sai OTP (5), giới hạn gửi lại OTP (60 giây, 5 lần mỗi giờ), thời gian hết phiên Admin (30 phút), thông tin cửa hàng (gồm giờ làm việc), thông tin hóa đơn (gồm thuế suất VAT), mẫu email (OTP, đặt mật khẩu Admin, tóm tắt tồn kho, gửi hóa đơn), bật/tắt COD và QR, tài khoản ngân hàng nhận tiền.
+**Các khóa cấu hình cần có:** số ngày đổi/trả (7, khóa `policy.returnDays`), thời hạn đánh giá (90 ngày, khóa `policy.reviewDays`), hạn thanh toán QR (15 phút), ngưỡng đặt cọc (20.000.000đ), tỷ lệ cọc (30%), số ngày trễ được bù (2), giá trị voucher bù (100.000đ), hạn voucher bù (30 ngày), thời gian hoàn tiền (3–7 ngày làm việc), số giờ coi đơn chờ xác nhận là quá hạn (cho Dashboard AD-02), số ngày nhãn Mới (30), ngưỡng nhãn Bán chạy (top 10%, tối thiểu 5 sản phẩm đã bán), bảng phí 4 cấp vận chuyển, số ngày chuẩn bị giao theo cấp (cấp 1–2: 3, cấp 3–4: 5 ngày làm việc), khung giờ giao, số lần đổi lịch (2), số lần giao lại (2), ngưỡng cảnh báo tồn kho mặc định, số lần đăng nhập sai (3), thời gian khóa (1 phút), hạn OTP (5 phút), số lần nhập sai OTP (5), giới hạn gửi lại OTP (60 giây, 5 lần mỗi giờ), thời gian hết phiên Admin (30 phút), thông tin cửa hàng (gồm giờ làm việc), thông tin hóa đơn (gồm thuế suất VAT), mẫu email (OTP, đặt mật khẩu Admin, tóm tắt tồn kho, gửi hóa đơn), bật/tắt COD và QR, tài khoản ngân hàng nhận tiền.
 
 ### Thực thể 34: Showroom (Showroom)
 

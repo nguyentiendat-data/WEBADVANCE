@@ -20,11 +20,13 @@ uploadRoutes.post(
       purpose = form.get('purpose');
     if (
       !(file instanceof File) ||
-      !['WARRANTY_EVIDENCE', 'RETURN_EVIDENCE'].includes(String(purpose))
+      !['WARRANTY_EVIDENCE', 'RETURN_EVIDENCE', 'REVIEW_IMAGE'].includes(String(purpose))
     )
       throw new AppError('VALIDATION_ERROR', 400, 'File hoặc mục đích upload không hợp lệ');
     const bytes = new Uint8Array(await file.arrayBuffer()),
       format = detectFile(bytes);
+    if (String(purpose) === 'REVIEW_IMAGE' && format.video)
+      throw new AppError('VALIDATION_ERROR', 400, 'Đánh giá chỉ nhận ảnh');
     if (bytes.length > (format.video ? 50 : 5) * 1024 * 1024)
       throw new AppError(
         'FILE_TOO_LARGE',

@@ -22,6 +22,8 @@ export type ProductSort = 'price_asc' | 'price_desc' | 'newest' | 'name_asc' | '
 
 export interface ProductListQuery {
   q?: string;
+  collection?: string;
+  ids?: string[];
   categoryIds?: string[];
   badge?: ProductBadge;
   hasPromotion?: boolean;
@@ -90,4 +92,43 @@ export interface ProductDetail {
     isDetachable: boolean;
   }[];
   variants: ProductVariant[];
+  ratingSummary: {
+    average: number;
+    count: number;
+    distribution: Record<'1' | '2' | '3' | '4' | '5', number>;
+  };
+}
+
+/** Các đặc tính có thật trong kết quả tìm kiếm, dùng để chỉ hiện lựa chọn lọc còn sản phẩm khớp. */
+export interface ProductFacets {
+  total: number;
+  categoryIds: { id: string; count: number }[];
+  colors: { value: string; count: number }[];
+  materials: { value: string; count: number }[];
+  price: { min: number; max: number };
+  length: { min: number; max: number } | null;
+  inStock: number;
+  hasPromotion: number;
+  badges: { NEW: number; BEST_SELLER: number };
+}
+
+/** Một đánh giá hiển thị trên trang chi tiết (FR-21). */
+export interface ProductReview {
+  id: string;
+  customerName: string;
+  avatar: string | null;
+  rating: number;
+  comment: string;
+  images: string[];
+  createdAt: string;
+  isEdited: boolean;
+  variant: { sku: string; color: string; dimensions: { length?: number; width?: number; height?: number; unit: string } | null } | null;
+}
+
+export interface ProductReviewPage {
+  items: ProductReview[];
+  page: number;
+  totalPages: number;
+  total: number;
+  average: number;
 }

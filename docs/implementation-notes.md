@@ -226,3 +226,26 @@ Build backend và hai Angular app đã qua; build không thêm warning. Repo ch�
 - `scripts/browser-smoke.cjs`
 - `server/test/business-rules.test.ts`
 - `server/test/integration-smoke.cjs`
+
+## Trang tài khoản khách hàng (FR-06 → FR-14, FR-21)
+
+Gộp giao diện từ nhánh `feature/account_management` nhưng dùng API của server chính theo `docs/api-design.md`, không dùng server demo `my-server-mongoDB`.
+
+- Trang `/account/*` yêu cầu đăng nhập: Tài khoản của tôi, Đơn hàng, Danh sách địa chỉ, Yêu thích, Ví voucher, Hồ sơ nhà, Đánh giá, Đăng xuất. Mục "Dịch vụ hậu mãi" mở trang `/support` có sẵn.
+- API mới: `GET/PATCH /users/me`, `POST /users/me/delete-request`, `/users/me/wishlist`, `/users/me/vouchers`, `/users/me/walkway-profiles`, `GET /users/me/reviews`, `GET /orders`, `POST /orders/:orderId/items/:orderItemId/reviews`, `GET /products/:productId/reviews`, `POST /auth/change-password`, `DELETE /users/me/addresses/:id`. Phần bổ sung ngoài docs gốc được ghi trong các khối "Đã code" của `api-design.md` (giới tính, địa chỉ hồ sơ lối đi, phản hồi yêu thích/voucher/đánh giá, `ratingSummary`).
+- Sản phẩm chờ đánh giá không có endpoint riêng: trang gọi `GET /orders?status=DELIVERED` rồi `GET /orders/:id` từng đơn, lọc `items[].actions.canReview` (tối đa 20 đơn gần nhất).
+- `partDimensions` là dữ liệu nội bộ nên không trả ra API sản phẩm. Mục "Trong hộp có gì" ở trang chi tiết hiện ảnh minh họa của từng bộ phận (`parts[].image`); khi sản phẩm chưa khai báo bộ phận thì vẽ bản vẽ kích thước cả sản phẩm từ `variants[].dimensions`.
+- Thêm khóa `policy.reviewDays` (mặc định 90) cho hạn đánh giá.
+- Đổi email/SĐT dùng OTP `CHANGE_CONTACT` (`POST /auth/otp/send` cần đăng nhập → `POST /auth/otp/verify` → `PUT /users/me/contact`). Tài khoản chưa có mật khẩu xóa tài khoản bằng OTP `DELETE_ACCOUNT`.
+- Đánh giá: khách sửa, xóa mềm trên trang Đánh giá; báo cáo vi phạm ở từng đánh giá trên trang sản phẩm. Bộ lọc từ cấm và spam nằm ở `reviews/review-filter.ts`, có test.
+- Yêu thích lưu trên server (`/users/me/wishlist`); nút tim ở thẻ sản phẩm, trang chi tiết và hotspot dùng chung một service. Khách chưa đăng nhập bấm tim được đưa tới trang đăng nhập rồi quay lại trang đang xem (FR-22).
+- Chưa làm: màn hình duyệt báo cáo đánh giá của Product Admin (PA-09).
+
+### Tệp liên quan
+
+- `server/src/modules/account/*`
+- `server/src/modules/reviews/*`
+- `server/test/review-filter.test.ts`
+- `projects/customer-web/src/app/core/shopping/collection-wishlist.service.ts`
+- `server/src/modules/orders/order-history.ts`
+- `projects/customer-web/src/app/features/account/*`

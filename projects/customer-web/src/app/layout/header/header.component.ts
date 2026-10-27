@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
-import { CatalogApiService, type Category } from 'shared';
+import { CatalogApiService, type Category, type ProductListItem } from 'shared';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { catchError, debounceTime, distinctUntilChanged, filter, map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
@@ -18,13 +18,14 @@ import { CartStore } from '../../core/cart/cart.store';
 import { ProductSearchService } from '../../core/search/product-search.service';
 import { SearchUiService } from '../../core/search/search-ui.service';
 import { IconComponent } from '../../shared/ui/icons/icon.component';
+import { VndPipe } from '../../shared/pipes/vnd.pipe';
 
 /** Cuộn quá ngưỡng này (px) thì header đổi sang nền trắng. */
 const SCROLL_THRESHOLD = 24;
 
 @Component({
   selector: 'app-header',
-  imports: [RouterLink, IconComponent, ReactiveFormsModule],
+  imports: [RouterLink, IconComponent, ReactiveFormsModule, VndPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.solid]': '!isHome() || solid()',
@@ -58,6 +59,22 @@ export class HeaderComponent {
       ),
     ),
     { initialValue: [] as string[] },
+  );
+  /** Sản phẩm khớp từ khóa, hiện dưới danh sách gợi ý. */
+  protected readonly productResults = toSignal(
+    this.searchControl.valueChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap((q) =>
+        q.trim()
+          ? this.api.getProducts({ q: q.trim(), limit: 6 }).pipe(
+              map((r) => ({ items: r.items, total: r.meta.total })),
+              catchError(() => of({ items: [] as ProductListItem[], total: 0 })),
+            )
+          : of({ items: [] as ProductListItem[], total: 0 }),
+      ),
+    ),
+    { initialValue: { items: [] as ProductListItem[], total: 0 } },
   );
   protected readonly cart = inject(CartStore);
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
@@ -109,6 +126,21 @@ export class HeaderComponent {
   protected closeSearch(): void {
     this.search.closeSearch();
     this.searchInput()?.nativeElement.blur();
+  }
+
+  /** Có chữ thì xóa chữ và giữ ô nhập; ô trống thì đóng ô tìm kiếm. */
+  protected clearOrClose(): void {
+    if (!this.searchControl.value) {
+      this.closeSearch();
+      return;
+    }
+    this.searchControl.setValue('');
+    this.searchInput()?.nativeElement.focus({ preventScroll: true });
+  }
+
+  protected openImageSearch(): void {
+    this.closeSearch();
+    this.search.openImageSearch();
   }
 
   protected onScroll(): void {

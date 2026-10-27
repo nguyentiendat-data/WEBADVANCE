@@ -32,33 +32,18 @@
     <ul class="container gallery">
       @for (image of detail.images; track image.id) {
         <li class="tile">
-          <img [src]="image.url" [alt]="image.title || detail.name" loading="lazy" />
-          @for (hotspot of image.hotspots; track $index) {
-            <a
-              class="hotspot"
-              [routerLink]="['/products', hotspot.slug]"
-              [style.left.%]="hotspot.x * 100"
-              [style.top.%]="hotspot.y * 100"
-              aria-label="Xem sản phẩm"
-            ></a>
-          }
+          <app-hotspot-image [image]="image" ratio="3 / 4" [(active)]="activeHotspot" />
         </li>
       }
     </ul>
   }
 
-  <section class="container list">
-    <h2>Các sản phẩm thuộc {{ detail.name }} Collection</h2>
-    @if (detail.products.length) {
-      <div class="grid" role="list">
-        @for (product of detail.products; track product.id) {
-          <app-product-card [product]="product" />
-        }
-      </div>
-    } @else {
-      <p class="state">Hiện chưa có sản phẩm trong bộ sưu tập này.</p>
-    }
-  </section>
+  <app-product-list
+    class="list"
+    [embedded]="true"
+    [heading]="'Các sản phẩm thuộc ' + detail.name + ' Collection'"
+    [collection]="detail.slug"
+  />
 } @else if (detail === null) {
   <p class="state">Không tải được bộ sưu tập. Vui lòng thử lại.</p>
 } @else {

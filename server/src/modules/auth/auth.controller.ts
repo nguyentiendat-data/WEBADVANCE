@@ -1,13 +1,14 @@
 import type { RequestHandler } from 'express';
 import { AppError } from '../../lib/app-error.js';
 import {
+  changePassword,
   getCurrentUser,
   login,
   register,
   resetPassword,
   type AuthResult,
 } from './auth.service.js';
-import type { LoginBody, RegisterBody, ResetPasswordBody } from './auth.schema.js';
+import type { ChangePasswordBody, LoginBody, RegisterBody, ResetPasswordBody } from './auth.schema.js';
 import { linkGoogle, loginWithGoogle, requestGoogleLinkOtp } from './google.service.js';
 import { sendOtp, verifyOtp, type SendOtpInput } from './otp.service.js';
 import { readRefreshToken, revokeSession, rotateSession } from './token.service.js';
@@ -18,7 +19,8 @@ function success<T>(data: T, message?: string) {
 
 export const sendOtpHandler: RequestHandler = async (req, res) => {
   const body = req.body as SendOtpInput;
-  const result = await sendOtp(body);
+  // `CHANGE_CONTACT`, `DELETE_ACCOUNT` có `req.user` từ `requireAuth`: userId lấy từ token, không tin body.
+  const result = await sendOtp({ ...body, userId: req.user?.id ?? null });
 
   // Không bao giờ trả mã OTP ra response.
   res.status(200).json(
@@ -90,4 +92,9 @@ export const googleLinkOtpHandler: RequestHandler = async (req, res) => {
 export const googleLinkHandler: RequestHandler = async (req, res) => {
   const result = await linkGoogle(req.body as { linkToken: string; password?: string; otpId?: string }, res);
   res.status(200).json(success(result, 'Liên kết tài khoản Google thành công'));
+};
+
+export const changePasswordHandler: RequestHandler = async (req, res) => {
+  await changePassword(req.user!.id, req.body as ChangePasswordBody);
+  res.status(200).json(success({ changed: true }, 'Đổi mật khẩu thành công'));
 };

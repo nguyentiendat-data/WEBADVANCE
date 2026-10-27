@@ -3,15 +3,11 @@ import { config } from '../../config/index.js';
 import mongoose from 'mongoose';
 import { ProductModel } from './product.model.js';
 import { buildListItems } from './product.service.js';
+import { searchLocalImages } from './local-image-search.service.js';
 
 export async function searchByImage(image: Uint8Array, mime: string) {
   // Adapter: CLIP/SigLIP provider returns { embedding: number[] } for the configured model.
-  if (!config.embeddingUrl)
-    throw new AppError(
-      'IMAGE_SEARCH_UNAVAILABLE',
-      503,
-      'Tìm kiếm ảnh chưa được cấu hình. Bạn có thể tìm sản phẩm bằng từ khóa.',
-    );
+  if (!config.embeddingUrl) return searchLocalImages(image);
   try {
     const response = await fetch(config.embeddingUrl, {
       method: 'POST',

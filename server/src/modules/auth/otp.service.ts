@@ -28,6 +28,8 @@ export interface SendOtpResult {
 }
 
 const PUBLIC_PURPOSES: OtpPurpose[] = [OtpPurpose.REGISTER, OtpPurpose.FORGOT_PASSWORD];
+/** Cần đăng nhập: `userId` lấy từ token (API Design 1.1). */
+export const ACCOUNT_PURPOSES: OtpPurpose[] = [OtpPurpose.CHANGE_CONTACT, OtpPurpose.DELETE_ACCOUNT];
 
 export function normalizeTarget(channel: OtpChannel, target: string): string {
   const trimmed = target.trim();
@@ -41,7 +43,7 @@ export async function sendOtp(
   input: SendOtpInput,
   options: { internal?: boolean } = {},
 ): Promise<SendOtpResult> {
-  if (!options.internal && !PUBLIC_PURPOSES.includes(input.purpose)) {
+  if (!options.internal && !PUBLIC_PURPOSES.includes(input.purpose) && !ACCOUNT_PURPOSES.includes(input.purpose)) {
     throw new AppError('FORBIDDEN', 403, 'Mục đích xác thực không hợp lệ');
   }
 
@@ -60,6 +62,25 @@ export async function sendOtp(
       expiresAt: new Date(now.getTime() + OTP_TTL_SECONDS * 1000).toISOString(),
       resendAvailableAt: new Date(now.getTime() + OTP_RESEND_INTERVAL_SECONDS * 1000).toISOString(),
     };
+  }
+
+  if (ACCOUNT_PURPOSES.includes(input.purpose)) {
+    const owner = input.userId ? await UserModel.findById(input.userId).lean() : null;
+    if (!owner) throw new AppError('UNAUTHORIZED', 401, 'Bạn chưa đăng nhập');
+    if (input.purpose === OtpPurpose.CHANGE_CONTACT && existingUser && !existingUser._id.equals(owner._id)) {
+      throw new AppError(
+        input.channel === OtpChannel.EMAIL ? 'EMAIL_EXISTS' : 'PHONE_EXISTS',
+        409,
+        input.channel === OtpChannel.EMAIL
+          ? 'Email này đã được sử dụng'
+          : 'Số điện thoại này đã được sử dụng',
+      );
+    }
+    // Xóa tài khoản chỉ gửi mã tới liên hệ hiện có của chính chủ.
+    const current = input.channel === OtpChannel.EMAIL ? owner.email : owner.phoneNumber;
+    if (input.purpose === OtpPurpose.DELETE_ACCOUNT && current !== target) {
+      throw new AppError('VALIDATION_ERROR', 400, 'Mã chỉ gửi tới liên hệ của tài khoản');
+    }
   }
 
   if (input.purpose === OtpPurpose.REGISTER && existingUser) {
@@ -106,7 +127,9 @@ export async function sendOtp(
   const expiresAt = new Date(now.getTime() + OTP_TTL_SECONDS * 1000);
 
   const otp = await OtpModel.create({
-    userId: existingUser?._id ?? null,
+    userId: ACCOUNT_PURPOSES.includes(input.purpose)
+      ? new Types.ObjectId(input.userId!)
+      : (existingUser?._id ?? null),
     purpose: input.purpose,
     channel: input.channel,
     target,

@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { NavigationEnd, NavigationStart, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { FloatingActionsComponent } from './layout/floating-actions/floating-actions.component';
 import { FooterComponent } from './layout/footer/footer.component';
@@ -9,6 +9,9 @@ import { ToastComponent } from './layout/toast/toast.component';
 import { ConfirmComponent } from './layout/confirm/confirm.component';
 import { VariantPickerService } from './core/cart/variant-picker.service';
 import { VariantPickerComponent } from './shared/ui/variant-picker/variant-picker.component';
+import { SearchUiService } from './core/search/search-ui.service';
+import { ImageSearchComponent } from './features/image-search/image-search.component';
+import { IconComponent } from './shared/ui/icons/icon.component';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +23,8 @@ import { VariantPickerComponent } from './shared/ui/variant-picker/variant-picke
     VariantPickerComponent,
     ToastComponent,
     ConfirmComponent,
+    ImageSearchComponent,
+    IconComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.html',
@@ -28,6 +33,54 @@ import { VariantPickerComponent } from './shared/ui/variant-picker/variant-picke
 export class App {
   private readonly router = inject(Router);
   protected readonly picker = inject(VariantPickerService);
+  protected readonly search = inject(SearchUiService);
+  private readonly imageDialog = viewChild<ElementRef<HTMLDialogElement>>('imageDialog');
+
+  constructor() {
+    // Đổi trang thì đóng popup tìm bằng hình ảnh.
+    this.router.events.subscribe((event) => {
+      if (event instanceof NavigationStart) this.search.imageOpen.set(false);
+    });
+    effect((onCleanup) => {
+      if (!this.search.imageOpen()) return;
+      const dialog = this.imageDialog()?.nativeElement;
+      if (!dialog) return;
+      const previousFocus = document.activeElement as HTMLElement | null;
+      const body = document.body;
+      const previousStyles = {
+        overflow: body.style.overflow,
+        position: body.style.position,
+        top: body.style.top,
+        left: body.style.left,
+        width: body.style.width,
+      };
+      const scroll = { left: window.scrollX, top: window.scrollY, behavior: 'instant' as const };
+      Object.assign(body.style, {
+        overflow: 'hidden',
+        position: 'fixed',
+        top: `-${scroll.top}px`,
+        left: `-${scroll.left}px`,
+        width: '100%',
+      });
+      dialog.showModal();
+      onCleanup(() => {
+        dialog.close();
+        Object.assign(body.style, previousStyles);
+        previousFocus?.focus({ preventScroll: true });
+        window.scrollTo(scroll);
+      });
+    });
+  }
+
+  /** Bấm ra ngoài khung popup thì đóng. */
+  protected onImageDialogClick(event: MouseEvent): void {
+    const dialog = this.imageDialog()?.nativeElement;
+    if (!dialog || event.target !== dialog) return;
+    const b = dialog.getBoundingClientRect();
+    if (event.clientX < b.left || event.clientX > b.right || event.clientY < b.top || event.clientY > b.bottom) {
+      this.search.imageOpen.set(false);
+    }
+  }
 
   /**
    * `data: { layout }` trên route: `'compact'` tự hiển thị header riêng, ẩn header và nút nổi chung;

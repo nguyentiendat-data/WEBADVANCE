@@ -32,6 +32,7 @@ export interface IUserLockInfo {
 
 export interface IUserProfile {
   fullName: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
   dateOfBirth: Date | null;
   birthDateEditCount: number;
 }
@@ -63,6 +64,7 @@ const userSchema = new Schema<IUser>(
     authSource: { type: String, enum: Object.values(AuthSource), required: true },
     profile: {
       fullName: { type: String, required: true, trim: true },
+      gender: { type: String, enum: ['MALE', 'FEMALE', 'OTHER'], default: null },
       dateOfBirth: { type: Date, default: null },
       birthDateEditCount: { type: Number, default: 0 },
     },

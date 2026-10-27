@@ -6,7 +6,13 @@ import type { Banner } from '../models/banner.model';
 import type { Category, CategoryType } from '../models/category.model';
 import type { CollectionDetail, CollectionSummary } from '../models/collection.model';
 import type { InspirationDetail, InspirationSummary } from '../models/inspiration.model';
-import type { ProductDetail, ProductListItem, ProductListQuery } from '../models/product.model';
+import type {
+  ProductDetail,
+  ProductFacets,
+  ProductListItem,
+  ProductListQuery,
+  ProductReviewPage,
+} from '../models/product.model';
 import type { FlashSale } from '../models/promotion.model';
 import type { PublicConfig } from '../models/public-config.model';
 import type { Showroom, ShowroomRegion } from '../models/showroom.model';
@@ -33,6 +39,8 @@ export class CatalogApiService {
   ): Observable<{ items: ProductListItem[]; meta: PageMeta }> {
     let params = new HttpParams();
     if (query.q) params = params.set('q', query.q);
+    if (query.collection) params = params.set('collection', query.collection);
+    if (query.ids?.length) params = params.set('ids', query.ids.join(','));
     if (query.categoryIds?.length) params = params.set('categoryIds', query.categoryIds.join(','));
     if (query.badge) params = params.set('badge', query.badge);
     if (query.hasPromotion) params = params.set('hasPromotion', true);
@@ -60,9 +68,31 @@ export class CatalogApiService {
       .pipe(map((r) => ({ items: r.data, meta: r.meta })));
   }
 
+  /** Đặc tính của các sản phẩm trong ngữ cảnh tìm kiếm (không tính bộ lọc người dùng đang chọn). */
+  getFacets(
+    query: Pick<ProductListQuery, 'q' | 'collection' | 'ids' | 'hasPromotion' | 'categoryIds'> = {},
+  ): Observable<ProductFacets> {
+    let params = new HttpParams();
+    if (query.q) params = params.set('q', query.q);
+    if (query.collection) params = params.set('collection', query.collection);
+    if (query.ids?.length) params = params.set('ids', query.ids.join(','));
+    if (query.categoryIds?.length) params = params.set('categoryIds', query.categoryIds.join(','));
+    if (query.hasPromotion) params = params.set('hasPromotion', true);
+    return this.http
+      .get<ApiResponse<ProductFacets>>(`${API_BASE}/products/facets`, { params })
+      .pipe(map((r) => r.data));
+  }
+
   getProduct(slug: string): Observable<ProductDetail> {
     return this.http
       .get<ApiResponse<ProductDetail>>(`${API_BASE}/products/${encodeURIComponent(slug)}`)
+      .pipe(map((r) => r.data));
+  }
+
+  getProductReviews(productId: string, page = 1, limit = 5): Observable<ProductReviewPage> {
+    const params = new HttpParams().set('page', page).set('limit', limit);
+    return this.http
+      .get<ApiResponse<ProductReviewPage>>(`${API_BASE}/products/${encodeURIComponent(productId)}/reviews`, { params })
       .pipe(map((r) => r.data));
   }
 

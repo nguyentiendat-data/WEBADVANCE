@@ -25,6 +25,7 @@ import { VariantModel } from '../products/variant.model.js';
 import { consumeVoucher, refundVoucherUsage } from '../vouchers/voucher.service.js';
 import { OrderModel, type OrderDoc, type OrderStatus } from './order.model.js';
 import { PaymentTransactionModel, type RefundAccount } from './payment-transaction.model.js';
+import { getItemActions } from './order-history.js';
 import { ShipmentModel } from './shipment.model.js';
 
 export interface QrInfo {
@@ -608,9 +609,10 @@ export async function rescheduleDelivery(
 /** API Design 3.1 (rút gọn): chi tiết đơn cho trang thành công; FR-10 bổ sung `items[].actions`. */
 export async function getOrderDetail(userId: Types.ObjectId, orderId: Types.ObjectId) {
   const order = await findOwnOrder(userId, orderId);
-  const [shipment, { shipping }] = await Promise.all([
+  const [shipment, { shipping }, actions] = await Promise.all([
     ShipmentModel.findOne({ orderId }).lean(),
     getCheckoutConfig(),
+    getItemActions(order),
   ]);
   const open = CUSTOMER_CANCELLABLE.includes(order.status);
   const day = (d?: Date | null): DateOnly | null => (d ? fromDate(d) : null);
@@ -629,6 +631,7 @@ export async function getOrderDetail(userId: Types.ObjectId, orderId: Types.Obje
       unitPrice: i.unitPrice,
       promotionDiscount: i.promotionDiscount,
       finalAmount: i.finalAmount,
+      actions: actions.get(i._id.toString()),
       hasInstallation: i.hasInstallation,
       installationFee: i.installationFee,
       shippingFee: i.shippingFee,
@@ -654,9 +657,16 @@ export async function getOrderDetail(userId: Types.ObjectId, orderId: Types.Obje
       estimatedDeliveryDate: day(shipment.estimatedDeliveryDate),
       scheduledDate: day(shipment.scheduledDate),
       scheduledSlot: shipment.scheduledSlot ?? null,
+      actualDeliveryDate: day(shipment.actualDeliveryDate),
     },
     invoiceInfo: order.invoiceInfo,
     cancellation: order.cancellation?.cancelledAt ? order.cancellation : null,
+    statusHistory: order.statusHistory.map((change) => ({
+      fromStatus: change.fromStatus ?? null,
+      toStatus: change.toStatus,
+      note: change.note ?? null,
+      changedAt: change.changedAt.toISOString(),
+    })),
     allowedActions: {
       canCancel: open,
       canReschedule:

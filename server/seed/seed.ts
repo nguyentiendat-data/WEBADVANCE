@@ -558,7 +558,7 @@ async function seedPromotion(
     maxDiscountValue: 5000000,
     startDate: new Date(now - DAY_MS),
     // Đồng hồ đếm ngược trên trang chủ: chạy lại seed để làm mới mốc kết thúc.
-    endDate: new Date(now + 2 * DAY_MS + 2 * 60 * 60 * 1000),
+    endDate: new Date(now + 2 * DAY_MS),
     status: 'RUNNING',
     targets: [
       ...(mattressCategory ? [{ categoryId: mattressCategory }] : []),

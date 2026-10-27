@@ -244,3 +244,30 @@ button:disabled { opacity: .5; cursor: default; }
 .panel { padding: var(--space-lg); border: 1px solid var(--color-gray-light); margin-block: var(--space-md); }
 @media (min-width: 760px) { .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 1180px) { .product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ---- Trang tài khoản (theo thiết kế Figma): các lớp dùng chung của các trang con ---- */
+.account-area .account-screen { min-width: 0; color: #000; font-size: 14px; }
+.account-area .screen-heading { position: relative; display: flex; align-items: center; justify-content: space-between; margin: 0 0 24px; }
+.account-area .screen-heading h1, .account-area .profile-header h1 { margin: 0; color: #000; font-size: 24px; font-weight: 600; line-height: 1.3; }
+.account-area .collapse-control { display: grid; width: 24px; height: 24px; min-height: 0; place-items: center; padding: 0; border: 0; background: none; color: #000; cursor: pointer; }
+.account-area .screen-intro { margin: 0 0 16px; color: #727a7d; font-size: 13px; line-height: 1.6; }
+.account-area .form-notice { margin: 0 0 16px; padding: 10px 14px; border: 1px solid #d6e4dc; border-radius: 4px; background: #f4faf6; color: #2f6b45; font-size: 14px; }
+.account-area .form-notice.error, .account-area .api-error { border: 1px solid #ead1cd; border-radius: 4px; background: #fff8f7; color: #a23a32; }
+.account-area .api-error { padding: 10px 14px; font-size: 14px; }
+.account-area .primary-button, .account-area .outline-button, .account-area .danger-button { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; gap: 8px; padding: 0 20px; border: 1px solid var(--navy); border-radius: 2px; background: var(--navy); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.account-area .primary-button:hover:not(:disabled) { background: var(--navy-dark); }
+.account-area .outline-button { background: #fff; color: var(--navy); }
+.account-area .outline-button:hover:not(:disabled) { background: #f3f6f9; }
+.account-area .danger-button { border-color: #d32f2f; background: #d32f2f; }
+.account-area .primary-button:disabled, .account-area .outline-button:disabled, .account-area .danger-button:disabled { border-color: #d8dcde; background: #f1f2f2; color: #969da0; cursor: not-allowed; }
+.account-area .link-button { min-height: 0; padding: 0; border: 0; background: none; color: var(--navy); font-size: 14px; cursor: pointer; }
+.account-area .default-badge { padding: 4px 8px; background: #eff4f7; color: var(--navy); font-size: 12px; white-space: nowrap; }
+.account-area .empty-state { display: grid; justify-items: center; padding: 44px 15px; color: #687174; text-align: center; }
+.account-area .empty-state > span { color: #9ba5a9; font-size: 30px; }
+.account-area .empty-state h2 { margin: 12px 0 5px; color: #343b3e; font-size: 16px; }
+.account-area .empty-state p { margin: 0 0 16px; font-size: 14px; }
+.account-area input, .account-area select, .account-area textarea { accent-color: var(--navy); }
+@media (max-width: 560px) {
+  .account-area .screen-heading h1, .account-area .profile-header h1 { font-size: 18px; }
+  .account-area .screen-heading { margin-bottom: 12px; }
+}

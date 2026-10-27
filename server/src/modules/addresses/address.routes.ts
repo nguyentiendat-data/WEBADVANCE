@@ -11,7 +11,7 @@ import {
   type CreateAddressBody,
   type UpdateAddressBody,
 } from './address.schema.js';
-import { createAddress, listAddresses, updateAddress } from './address.service.js';
+import { createAddress, deleteAddress, listAddresses, updateAddress } from './address.service.js';
 
 /** Sổ địa chỉ tối thiểu (FR-08) cho thanh toán, mount tại `/users/me/addresses`. */
 export const addressRoutes = Router();
@@ -45,5 +45,13 @@ addressRoutes.patch(
       res,
       await updateAddress(userId(res), toObjectId(String(req.params['addressId'])), body),
     );
+  }),
+);
+
+addressRoutes.delete(
+  '/:addressId',
+  asyncHandler(async (req, res) => {
+    await deleteAddress(userId(res), toObjectId(String(req.params['addressId'])));
+    sendData(res, { deleted: true });
   }),
 );

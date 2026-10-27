@@ -1,0 +1,22 @@
+<section class="account-layout account-area">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a routerLink="/">Trang Chủ</a><span class="sep" aria-hidden="true"></span><strong>Thông tin</strong>
+  </nav>
+  <div class="account-body">
+    <aside class="account-sidebar" aria-label="Quản lý tài khoản">
+      <nav>
+        @for (item of navigation; track item.path) {
+          <a [routerLink]="item.link ?? ['/account', item.path]" routerLinkActive="active">
+            <span>{{ item.label }}</span>
+            @if (item.path === 'reviews' && pendingReviewCount() > 0) {
+              <small class="nav-badge" [attr.aria-label]="pendingReviewCount() + ' sản phẩm chờ đánh giá'">{{ pendingReviewCount() }}</small>
+            }
+          </a>
+        }
+      </nav>
+    </aside>
+    <section class="account-content">
+      <router-outlet />
+    </section>
+  </div>
+</section>

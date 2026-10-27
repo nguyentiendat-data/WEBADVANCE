@@ -6,8 +6,14 @@
     }
   </a>
   @if (!compact()) {
-    <!-- TODO(FR-22): thêm/xóa yêu thích khi có chức năng đăng nhập -->
-    <button type="button" class="wish" aria-label="Thêm vào yêu thích">
+    <button
+      type="button"
+      class="wish"
+      [class.wish--on]="wished()"
+      [attr.aria-pressed]="wished()"
+      [attr.aria-label]="wished() ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'"
+      (click)="toggleWish()"
+    >
       <app-icon name="lucide:heart" [size]="18" />
     </button>
   }

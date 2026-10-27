@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { RouterLink } from '@angular/router';
 import type { ProductListItem } from 'shared';
 import { VariantPickerService } from '../../../core/cart/variant-picker.service';
+import { CollectionWishlistService } from '../../../core/shopping/collection-wishlist.service';
 import { VndPipe } from '../../pipes/vnd.pipe';
 import { IconComponent } from '../icons/icon.component';
 
@@ -30,6 +31,13 @@ export class ProductCardComponent {
   protected readonly soldOut = computed(() => this.product().stockStatus === 'OUT_OF_STOCK');
 
   private readonly picker = inject(VariantPickerService);
+  private readonly wishlist = inject(CollectionWishlistService);
+
+  protected readonly wished = computed(() => this.wishlist.ids().includes(this.product().id));
+
+  protected toggleWish(): void {
+    this.wishlist.toggle(this.product().id);
+  }
 
   protected openPicker(mode: 'add' | 'buy'): void {
     this.picker.open({ mode, slug: this.product().slug });
