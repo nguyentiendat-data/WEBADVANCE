@@ -1,3 +1,4 @@
+import { createServer } from 'node:http';
 import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import express from 'express';
@@ -5,8 +6,10 @@ import { config } from './config/index.js';
 import { connectDatabase, isDatabaseConnected } from './config/database.js';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware.js';
 import { apiRoutes } from './modules/routes.js';
+import { initSocket } from './socket/index.js';
 
 const app = express();
+const httpServer = createServer(app);
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '1mb' }));
@@ -37,7 +40,9 @@ app.use(errorHandler);
 async function start(): Promise<void> {
   await connectDatabase();
 
-  app.listen(config.port, () => {
+  initSocket(httpServer);
+
+  httpServer.listen(config.port, () => {
     console.warn(`API đang chạy ở cổng ${config.port}`);
   });
 }

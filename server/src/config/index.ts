@@ -11,6 +11,13 @@ export const config = {
   cookieSecret: process.env['COOKIE_SECRET'] ?? '',
   resendApiKey: process.env['RESEND_API_KEY'] ?? '',
   geminiApiKey: process.env['GEMINI_API_KEY'] ?? '',
+  /** Chat AI: model chính, model dự phòng, thời gian chờ và giới hạn tần suất cho khách công khai. */
+  geminiChatModel: process.env['GEMINI_CHAT_MODEL'] ?? 'gemini-3.1-flash-lite',
+  geminiChatFallbackModel: process.env['GEMINI_CHAT_FALLBACK_MODEL'] ?? 'gemini-flash-lite-latest',
+  chatAiTimeoutMs: Number(process.env['CHAT_AI_TIMEOUT_MS'] ?? 45000),
+  chatAiRateLimit: Number(process.env['CHAT_AI_RATE_LIMIT'] ?? 20),
+  chatAiRateWindowSeconds: Number(process.env['CHAT_AI_RATE_WINDOW_SECONDS'] ?? 60),
+  chatHistoryLimit: Number(process.env['CHAT_HISTORY_LIMIT'] ?? 20),
   googleClientId: process.env['GOOGLE_CLIENT_ID'] ?? '',
   bankWebhookSecret: process.env['BANK_WEBHOOK_SECRET'] ?? '',
   isProduction: process.env['NODE_ENV'] === 'production',

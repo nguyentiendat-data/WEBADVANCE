@@ -8,6 +8,8 @@ export interface RateLimitOptions {
   windowSeconds: number;
   message?: string;
   keyFn?: (req: Request) => string;
+  /** Bỏ qua giới hạn khi Redis lỗi. Chỉ nên bật cho endpoint không nhạy cảm. */
+  failOpen?: boolean;
 }
 
 /** Giới hạn tần suất dùng Redis để nhiều tiến trình dùng chung (NF-16). */
@@ -15,10 +17,15 @@ export function rateLimit(options: RateLimitOptions): RequestHandler {
   return async (req, res, next) => {
     const scope = options.keyFn ? options.keyFn(req) : (req.ip ?? 'unknown');
     const key = `rl:${options.prefix}:${scope}`;
-    const count = await redis.incr(key);
-
-    if (count === 1) {
-      await redis.expire(key, options.windowSeconds);
+    let count: number;
+    try {
+      count = await redis.incr(key);
+      if (count === 1) {
+        await redis.expire(key, options.windowSeconds);
+      }
+    } catch (error) {
+      if (options.failOpen) return next();
+      throw error;
     }
 
     if (count > options.limit) {

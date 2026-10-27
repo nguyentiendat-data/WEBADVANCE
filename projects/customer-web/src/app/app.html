@@ -7,6 +7,8 @@
 <app-footer />
 @if (!compact()) {
   <app-floating-actions [showDock]="!isViewYourRoom()" />
+  <app-ai-chat-bar />
+  <app-chat-widget />
 }
 @if (picker.request(); as request) {
   <app-variant-picker [request]="request" />

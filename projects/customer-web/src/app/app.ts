@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, injec
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationStart, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { AiChatBarComponent } from './features/chat/components/ai-chat-bar/ai-chat-bar.component';
+import { ChatWidgetComponent } from './features/chat/components/chat-widget/chat-widget.component';
 import { FloatingActionsComponent } from './layout/floating-actions/floating-actions.component';
 import { FooterComponent } from './layout/footer/footer.component';
 import { HeaderComponent } from './layout/header/header.component';
@@ -20,6 +22,8 @@ import { IconComponent } from './shared/ui/icons/icon.component';
     HeaderComponent,
     FooterComponent,
     FloatingActionsComponent,
+    AiChatBarComponent,
+    ChatWidgetComponent,
     VariantPickerComponent,
     ToastComponent,
     ConfirmComponent,
