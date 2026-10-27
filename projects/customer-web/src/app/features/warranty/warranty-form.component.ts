@@ -73,7 +73,7 @@ export class WarrantyFormComponent {
           if (this.embedded()) {
             this.requestCreated.emit(result.id);
             this.loading.set(false);
-          } else void this.router.navigate(['/account/warranty', result.id]);
+          } else void this.router.navigate(['/support'], { queryParams: { view: 'requests', kind: 'warranty', request: result.id } });
         },
         error: (error: unknown) => {
           this.error.set(apiErrorMessage(error));

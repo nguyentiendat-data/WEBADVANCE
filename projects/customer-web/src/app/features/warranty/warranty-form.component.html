@@ -3,7 +3,7 @@
     @if (!embedded()) {
       <p class="eyebrow">CARAVESO / BẢO HÀNH</p>
       <h1>Yêu cầu bảo hành</h1>
-      <a routerLink="/account/warranty">← Phiếu và yêu cầu của tôi</a>
+      <a routerLink="/support" [queryParams]="{ view: 'requests', kind: 'warranty' }">← Phiếu và yêu cầu của tôi</a>
     }
     @if (cards() === undefined) {
       <p role="status">Đang tải phiếu bảo hành…</p>

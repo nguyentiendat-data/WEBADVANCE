@@ -242,7 +242,7 @@ export class ReturnFormComponent {
           if (this.embedded()) {
             this.requestCreated.emit(result.id);
             this.loading.set(false);
-          } else void this.router.navigate(['/account/returns', result.id]);
+          } else void this.router.navigate(['/support'], { queryParams: { view: 'requests', kind: 'return', request: result.id } });
         },
         error: (error: unknown) => {
           this.error.set(apiErrorMessage(error));

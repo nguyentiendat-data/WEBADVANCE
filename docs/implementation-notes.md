@@ -40,8 +40,8 @@ UI chia thành `after-sales.component` (điều phối và dữ liệu), `suppor
 | Chi tiết sản phẩm | `/products/:slug` | Bấm ảnh/tên hoặc liên kết từ hotspot; dữ liệu từ API, không trả tồn kho nội bộ |
 | Ảnh cảm hứng | `/inspirations` | Mở ảnh và popup sản phẩm (tái sử dụng gallery hiện có) |
 | Đăng nhập | `/login`, `/account` | Tài khoản CUSTOMER, mật khẩu bcrypt; returnUrl nội bộ; reload khôi phục bằng cookie; logout thu hồi phiên |
-| Bảo hành | `/account/warranty`, `/new`, `/:id` | Tra serial/mã đơn/điện thoại trong tài khoản; chọn phiếu còn hạn; nhập lỗi/liên hệ, upload, gửi và xem timeline |
-| Đổi trả | `/account/returns`, `/new`, `/:id` | Chọn đơn/dòng đủ điều kiện, số lượng, lý do/minh chứng; nhập ngân hàng hoặc chọn biến thể đổi; gửi; hủy khi PENDING |
+| Bảo hành | `/support?view=warranty` | Tra serial/mã đơn/điện thoại trong tài khoản; chọn phiếu còn hạn; nhập lỗi/liên hệ, upload, gửi; theo dõi ở `view=requests` và trang `/account/after-sales` |
+| Đổi trả | `/support?view=return` | Chọn đơn/dòng đủ điều kiện, số lượng, lý do/minh chứng; nhập ngân hàng hoặc chọn biến thể đổi; gửi; hủy khi PENDING; theo dõi ở `view=requests` |
 | Chính sách | `/policies/warranty`, `/policies/returns` | Nội dung theo requirements và cấu hình số ngày thực tế, cần đăng nhập theo yêu cầu |
 
 Nhóm hậu mãi có guard frontend và kiểm tra CUSTOMER/chủ sở hữu ở backend. Footer/tài khoản có liên kết bảo hành, đổi trả; header có tìm kiếm và tìm bằng ảnh. Trạng thái có loading/empty/error/retry; danh sách sản phẩm có skeleton, drawer mobile có giữ focus, hotspot hỗ trợ bàn phím. Tiền VND; mốc thời gian hiển thị UTC+7.
@@ -185,24 +185,10 @@ Build backend và hai Angular app đã qua; build không thêm warning. Repo ch�
 
 ### Bảo hành và đổi trả
 
-- `projects/customer-web/src/app/features/returns/return-dashboard.component.css`
-- `projects/customer-web/src/app/features/returns/return-dashboard.component.html`
-- `projects/customer-web/src/app/features/returns/return-dashboard.component.ts`
-- `projects/customer-web/src/app/features/returns/return-detail.component.css`
-- `projects/customer-web/src/app/features/returns/return-detail.component.html`
-- `projects/customer-web/src/app/features/returns/return-detail.component.ts`
 - `projects/customer-web/src/app/features/returns/return-form.component.html`
 - `projects/customer-web/src/app/features/returns/return-form.component.ts`
-- `projects/customer-web/src/app/features/returns/returns.routes.ts`
-- `projects/customer-web/src/app/features/warranty/warranty-dashboard.component.css`
-- `projects/customer-web/src/app/features/warranty/warranty-dashboard.component.html`
-- `projects/customer-web/src/app/features/warranty/warranty-dashboard.component.ts`
-- `projects/customer-web/src/app/features/warranty/warranty-detail.component.css`
-- `projects/customer-web/src/app/features/warranty/warranty-detail.component.html`
-- `projects/customer-web/src/app/features/warranty/warranty-detail.component.ts`
 - `projects/customer-web/src/app/features/warranty/warranty-form.component.html`
 - `projects/customer-web/src/app/features/warranty/warranty-form.component.ts`
-- `projects/customer-web/src/app/features/warranty/warranty.routes.ts`
 - `projects/customer-web/src/app/shared/ui/evidence-upload/evidence-upload.component.css`
 - `projects/customer-web/src/app/shared/ui/evidence-upload/evidence-upload.component.html`
 - `projects/customer-web/src/app/shared/ui/evidence-upload/evidence-upload.component.ts`

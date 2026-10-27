@@ -15,7 +15,7 @@
           Sản phẩm cồng kềnh được xếp lịch bảo hành tại nhà. Sản phẩm nhỏ được gửi về trung tâm;
           CaraVeso chịu phí hai chiều trong phạm vi bảo hành.
         </p>
-        <a class="button primary" routerLink="/account/warranty">Tra cứu và yêu cầu bảo hành</a>
+        <a class="button primary" routerLink="/support" [queryParams]="{ view: 'warranty' }">Tra cứu và yêu cầu bảo hành</a>
       } @else {
         <h1>Chính sách đổi trả</h1>
         @let data = config();
@@ -47,7 +47,7 @@
             Không tải được chính sách hiện tại. Vui lòng tải lại trang.
           </p>
         }
-        <a class="button primary" routerLink="/account/returns">Quản lý đổi trả</a>
+        <a class="button primary" routerLink="/support" [queryParams]="{ view: 'return' }">Quản lý đổi trả</a>
       }
     </div>
   </section>

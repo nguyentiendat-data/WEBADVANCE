@@ -21,7 +21,7 @@ export class AccountLayoutComponent {
   protected readonly navigation: AccountNavItem[] = [
     { path: 'profile', label: 'Thông tin' },
     { path: 'orders', label: 'Đơn hàng' },
-    { path: 'aftersales', link: ['/support'], label: 'Dịch vụ hậu mãi' },
+    { path: 'after-sales', label: 'Dịch vụ hậu mãi' },
     { path: 'addresses', label: 'Danh sách địa chỉ' },
     { path: 'wishlist', label: 'Danh sách yêu thích' },
     { path: 'vouchers', label: 'Ví voucher' },

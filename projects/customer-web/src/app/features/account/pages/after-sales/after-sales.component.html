@@ -1,0 +1,63 @@
+<section class="account-screen after-sales-screen">
+  <h1 class="screen-heading">Dịch vụ hậu mãi</h1>
+
+  <div class="filter-tabs" role="tablist" aria-label="Loại yêu cầu">
+    <button type="button" role="tab" [class.active]="tab() === 'warranty'" [attr.aria-selected]="tab() === 'warranty'" (click)="tab.set('warranty')">Bảo hành</button>
+    <button type="button" role="tab" [class.active]="tab() === 'returns'" [attr.aria-selected]="tab() === 'returns'" (click)="tab.set('returns')">Đổi trả</button>
+    <a class="request-button" routerLink="/support" [queryParams]="{ view: tab() === 'warranty' ? 'warranty' : 'return' }">{{ tab() === 'warranty' ? 'Yêu cầu bảo hành' : 'Yêu cầu đổi trả' }}</a>
+  </div>
+
+  @if (tab() === 'warranty') {
+    @let requests = warranty();
+    @if (requests === undefined) {
+      <p role="status">Đang tải yêu cầu bảo hành...</p>
+    } @else if (requests === null) {
+      <p class="api-error" role="alert">Không tải được yêu cầu. <button class="link-button" type="button" (click)="retry.next(0)">Thử lại</button></p>
+    } @else {
+      @for (request of requests.data; track request.id) {
+        <a class="request-card" routerLink="/support" [queryParams]="{ view: 'requests', kind: 'warranty', request: request.id }">
+          <div class="request-info">
+            <strong>{{ request.productName }}</strong>
+            <span>Gửi ngày {{ request.requestedAt | date: 'dd/MM/yyyy' : '+0700' }}</span>
+          </div>
+          <span class="status-pill">{{ labels[request.status] || request.status }}</span>
+        </a>
+      } @empty {
+        <div class="empty-state"><h2>Chưa có yêu cầu bảo hành</h2><p>Các yêu cầu bảo hành bạn gửi sẽ hiện ở đây để theo dõi tiến độ.</p></div>
+      }
+      @if (requests.meta.totalPages > 1) {
+        <nav class="pager" aria-label="Phân trang">
+          <button type="button" [disabled]="requests.meta.page <= 1" (click)="warrantyPage.set(requests.meta.page - 1)">Trang trước</button>
+          <span>{{ requests.meta.page }} / {{ requests.meta.totalPages }}</span>
+          <button type="button" [disabled]="requests.meta.page >= requests.meta.totalPages" (click)="warrantyPage.set(requests.meta.page + 1)">Trang sau</button>
+        </nav>
+      }
+    }
+  } @else {
+    @let requests = returns();
+    @if (requests === undefined) {
+      <p role="status">Đang tải yêu cầu đổi trả...</p>
+    } @else if (requests === null) {
+      <p class="api-error" role="alert">Không tải được yêu cầu. <button class="link-button" type="button" (click)="retry.next(0)">Thử lại</button></p>
+    } @else {
+      @for (request of requests.data; track request.id) {
+        <a class="request-card" routerLink="/support" [queryParams]="{ view: 'requests', kind: 'return', request: request.id }">
+          <div class="request-info">
+            <strong>{{ request.productName }}</strong>
+            <span>{{ request.type === 'EXCHANGE' ? 'Đổi hàng' : 'Trả hàng' }} · {{ request.quantity }} sản phẩm · {{ request.requestedAt | date: 'dd/MM/yyyy' : '+0700' }}</span>
+          </div>
+          <span class="status-pill">{{ labels[request.status] || request.status }}</span>
+        </a>
+      } @empty {
+        <div class="empty-state"><h2>Chưa có yêu cầu đổi trả</h2><p>Các yêu cầu đổi trả bạn gửi sẽ hiện ở đây để theo dõi tiến độ.</p></div>
+      }
+      @if (requests.meta.totalPages > 1) {
+        <nav class="pager" aria-label="Phân trang">
+          <button type="button" [disabled]="requests.meta.page <= 1" (click)="returnsPage.set(requests.meta.page - 1)">Trang trước</button>
+          <span>{{ requests.meta.page }} / {{ requests.meta.totalPages }}</span>
+          <button type="button" [disabled]="requests.meta.page >= requests.meta.totalPages" (click)="returnsPage.set(requests.meta.page + 1)">Trang sau</button>
+        </nav>
+      }
+    }
+  }
+</section>
