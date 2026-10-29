@@ -31,6 +31,8 @@ export interface OtpSendResponse {
   otpId: string;
   expiresAt: string;
   resendAvailableAt: string;
+  /** Chỉ có khi giả lập SMS ở môi trường dev. */
+  devCode?: string;
 }
 
 export interface OtpVerifyRequest {

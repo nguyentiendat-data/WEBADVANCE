@@ -8,6 +8,13 @@ export interface ParsedApiError {
 
 const FALLBACK_MESSAGE = 'Đã có lỗi xảy ra, vui lòng thử lại sau.';
 
+/** Lỗi validate của server trả mảng `{ field, issue }`: hiển thị lý do cụ thể thay vì câu chung chung. */
+function validationMessage(details: unknown): string | null {
+  if (!Array.isArray(details) || details.length === 0) return null;
+  const first = details[0] as { issue?: unknown } | null;
+  return typeof first?.issue === 'string' ? first.issue : null;
+}
+
 export function parseApiError(error: unknown): ParsedApiError {
   if (error instanceof HttpErrorResponse) {
     const body = error.error as { error?: { code?: string; message?: string; details?: unknown } } | null;
@@ -16,7 +23,7 @@ export function parseApiError(error: unknown): ParsedApiError {
     if (apiError?.code) {
       return {
         code: apiError.code,
-        message: apiError.message ?? FALLBACK_MESSAGE,
+        message: validationMessage(apiError.details) ?? apiError.message ?? FALLBACK_MESSAGE,
         details:
           apiError.details && typeof apiError.details === 'object'
             ? (apiError.details as Record<string, unknown>)

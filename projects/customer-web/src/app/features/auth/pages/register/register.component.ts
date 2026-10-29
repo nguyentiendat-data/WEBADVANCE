@@ -10,6 +10,7 @@ import { Router, RouterLink } from '@angular/router';
 import { finalize, switchMap } from 'rxjs';
 import { parseApiError } from '../../../../core/auth/auth-error';
 import { AuthService } from '../../../../core/auth/auth.service';
+import { ToastService } from '../../../../core/toast/toast.service';
 import { AuthLayoutComponent } from '../../components/auth-layout/auth-layout.component';
 import { GoogleAuthComponent } from '../../components/google-auth/google-auth.component';
 
@@ -18,6 +19,14 @@ type Step = 'form' | 'otp';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^(0|\+84)\d{9}$/;
+
+/** Khớp quy tắc của server (isStrongPassword): có chữ cái, chữ số và ký tự đặc biệt. */
+function strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
+  const value = String(control.value ?? '');
+  if (!value) return null;
+  const strong = /[A-Za-z]/.test(value) && /\d/.test(value) && /[^A-Za-z0-9]/.test(value);
+  return strong ? null : { weakPassword: true };
+}
 
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
   const password = group.get('password')?.value;
@@ -36,13 +45,14 @@ export class RegisterComponent implements OnDestroy {
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   readonly form = this.formBuilder.group(
     {
       fullName: ['', [Validators.required, Validators.minLength(2)]],
       dateOfBirth: [''],
       contact: ['', [Validators.required]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [Validators.required, Validators.minLength(8), strongPasswordValidator]],
       confirmPassword: ['', [Validators.required]],
       termsAccepted: [false, [Validators.requiredTrue]],
     },
@@ -219,6 +229,9 @@ export class RegisterComponent implements OnDestroy {
       .subscribe({
         next: (response) => {
           this.otpId = response.otpId;
+          if (response.devCode) {
+            this.toast.success(`SMS giả lập: mã xác thực của bạn là ${response.devCode}`, 8000);
+          }
           this.step.set('otp');
           this.otpForm.reset();
           this.startOtpExpiryCountdown(response.expiresAt);

@@ -133,6 +133,10 @@
           </div>
           @if (password.touched && password.hasError('minlength')) {
             <span class="field-error">Mật khẩu phải có ít nhất 8 ký tự.</span>
+          } @else if (password.touched && password.hasError('weakPassword')) {
+            <span class="field-error"
+              >Mật khẩu phải gồm chữ cái, chữ số và ký tự đặc biệt (ví dụ: Abcd1234!).</span
+            >
           }
         </div>
 

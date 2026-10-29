@@ -18,8 +18,8 @@ export class ToastService {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private nextId = 0;
 
-  success(message: string): void {
-    this.show(message, 'success');
+  success(message: string, durationMs = DURATION_MS): void {
+    this.show(message, 'success', durationMs);
   }
 
   error(message: string): void {
@@ -33,11 +33,11 @@ export class ToastService {
     this.timer = setTimeout(() => this.clear(), LEAVE_MS);
   }
 
-  private show(message: string, kind: Toast['kind']): void {
+  private show(message: string, kind: Toast['kind'], durationMs = DURATION_MS): void {
     clearTimeout(this.timer);
     this.leaving.set(false);
     this.current.set({ id: ++this.nextId, message, kind });
-    this.timer = setTimeout(() => this.dismiss(), DURATION_MS - LEAVE_MS);
+    this.timer = setTimeout(() => this.dismiss(), durationMs - LEAVE_MS);
   }
 
   private clear(): void {

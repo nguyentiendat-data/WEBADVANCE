@@ -22,12 +22,14 @@ export const sendOtpHandler: RequestHandler = async (req, res) => {
   // `CHANGE_CONTACT`, `DELETE_ACCOUNT` có `req.user` từ `requireAuth`: userId lấy từ token, không tin body.
   const result = await sendOtp({ ...body, userId: req.user?.id ?? null });
 
-  // Không bao giờ trả mã OTP ra response.
+  // Mã OTP chỉ trả ra khi giả lập SMS (kênh PHONE) ở môi trường không phải production.
+  const simulatedCode = body.channel === 'PHONE' ? result.devCode : undefined;
   res.status(200).json(
     success({
       otpId: result.otpId,
       expiresAt: result.expiresAt,
       resendAvailableAt: result.resendAvailableAt,
+      ...(simulatedCode ? { devCode: simulatedCode } : {}),
     }),
   );
 };
