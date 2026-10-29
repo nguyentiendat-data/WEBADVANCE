@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { accountRoutes } from './account/account.routes.js';
 import { addressRoutes } from './addresses/address.routes.js';
+import { adminAuthRouter } from './auth/admin-auth.routes.js';
 import { authRouter } from './auth/auth.routes.js';
 import { bannerRoutes } from './banners/banner.routes.js';
 import { cartRoutes } from './cart/cart.routes.js';
@@ -38,6 +39,7 @@ apiRoutes.use('/chat', chatRouter);
 apiRoutes.use('/admin/chat', chatAdminRouter);
 apiRoutes.use('/collections', collectionRoutes);
 apiRoutes.use('/auth', authRouter);
+apiRoutes.use('/admin/auth', adminAuthRouter);
 apiRoutes.use('/config', configRoutes);
 apiRoutes.use('/fit-your-home', fitYourHomeRoutes);
 apiRoutes.use('/inspirations', inspirationRoutes);

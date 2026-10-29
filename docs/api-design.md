@@ -142,6 +142,9 @@ Mã nghiệp vụ dùng chung (409 trừ khi ghi khác): `OTP_INVALID`, `OTP_EXP
 | POST | `/auth/change-password` | U, AA | FR-05 | Đổi mật khẩu bằng mật khẩu cũ |
 | GET | `/auth/me` | U, AA | | Thông tin người đăng nhập và quyền |
 | POST | `/admin/auth/login` | P | PA-01, MA-01, OA-01, AD-01 | Đăng nhập admin (mật khẩu ≥ 12 ký tự) |
+| POST | `/admin/auth/refresh` | P | NF-A02 | Cấp access token mới từ cookie `adminRefreshToken`, trượt hạn phiên thêm 30 phút |
+| POST | `/admin/auth/logout` | P | | Thu hồi phiên admin, xóa cookie |
+| GET | `/admin/auth/me` | AA | | Thông tin admin đang đăng nhập (cùng dạng response của login, không có `accessToken`) |
 | POST | `/admin/auth/set-password` | P | AD-11 | Đặt mật khẩu bằng token từ email (hạn 24–48 giờ) |
 
 ### 1.1. `POST /auth/otp/send`
@@ -220,7 +223,9 @@ Sai mật khẩu `401 INVALID_CREDENTIALS` (kèm `remainingAttempts`). Khóa `42
 
 ### 1.7. `POST /admin/auth/login`
 
-Cùng body với `/auth/login`. Chỉ chấp nhận tài khoản có role admin. Trả thêm `role`, `mustChangePassword`, `sessionIdleTimeoutSeconds: 1800`.
+Cùng body với `/auth/login` (`identifier` phải là email, `password` ≥ 12 ký tự, nếu không trả `400 VALIDATION_ERROR`). Chỉ chấp nhận tài khoản có role admin; tài khoản khách hoặc không tồn tại đều trả `401 INVALID_CREDENTIALS` giống nhau và không tính vào số lần sai. Sai 3 lần khóa theo cùng quy tắc `ACCOUNT_LOCKED` ở mục 1.4. Trả thêm `role`, `mustChangePassword`, `sessionIdleTimeoutSeconds: 1800`.
+
+Refresh token của admin nằm ở cookie riêng `adminRefreshToken` (path `/api/v1/admin/auth`), tách khỏi cookie khách để hai phiên trên cùng host không ghi đè nhau. Dev: `npm run seed:admin` tạo tài khoản test `admin@caraveso.vn`.
 
 ---
 

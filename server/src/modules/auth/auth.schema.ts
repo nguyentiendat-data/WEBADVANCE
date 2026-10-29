@@ -60,6 +60,12 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Vui lòng nhập mật khẩu').max(72),
 });
 
+/** Admin: email + mật khẩu tối thiểu 12 ký tự (AD-01). Không đăng nhập bằng số điện thoại. */
+export const adminLoginSchema = z.object({
+  identifier: z.string().trim().pipe(z.email('Email không hợp lệ')),
+  password: z.string().min(12, 'Mật khẩu tối thiểu 12 ký tự').max(72, 'Mật khẩu tối đa 72 ký tự'),
+});
+
 export const resetPasswordSchema = z.object({
   otpId: objectIdSchema,
   newPassword: passwordSchema,
@@ -101,6 +107,7 @@ export const googleLinkSchema = z
 export type OtpSendBody = z.infer<typeof otpSendSchema>;
 export type OtpVerifyBody = z.infer<typeof otpVerifySchema>;
 export type RegisterBody = z.infer<typeof registerSchema>;
+export type AdminLoginBody = z.infer<typeof adminLoginSchema>;
 export type LoginBody = z.infer<typeof loginSchema>;
 export type ChangePasswordBody = z.infer<typeof changePasswordSchema>;
 export type ResetPasswordBody = z.infer<typeof resetPasswordSchema>;

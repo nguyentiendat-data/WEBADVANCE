@@ -96,6 +96,18 @@ export interface AuthResponse {
   accessToken: string;
 }
 
+/** Phiên đăng nhập admin (`POST /admin/auth/login`, `GET /admin/auth/me`). */
+export interface AdminSession {
+  user: AuthUser;
+  role: RoleName;
+  mustChangePassword: boolean;
+  sessionIdleTimeoutSeconds: number;
+}
+
+export interface AdminLoginResponse extends AdminSession {
+  accessToken: string;
+}
+
 export interface RegisterResponse extends AuthResponse {
   message?: string;
 }

@@ -121,7 +121,16 @@ export interface LoginInput {
   password: string;
 }
 
-export async function login(input: LoginInput, res: Response): Promise<AuthResult> {
+export interface LoginOptions {
+  /** `admin`: chỉ nhận tài khoản có vai trò admin (POST /admin/auth/login). */
+  audience?: 'customer' | 'admin';
+}
+
+export async function login(
+  input: LoginInput,
+  res: Response,
+  options: LoginOptions = {},
+): Promise<AuthResult> {
   const identifier = normalizeIdentifier(input.identifier);
   const query = identifier.includes('@')
     ? { email: identifier }
@@ -135,6 +144,11 @@ export async function login(input: LoginInput, res: Response): Promise<AuthResul
     throw new AppError('INVALID_CREDENTIALS', 401, 'Thông tin đăng nhập không đúng', {
       remainingAttempts: MAX_LOGIN_ATTEMPTS,
     });
+  }
+
+  // Tài khoản khách đăng nhập ở cổng admin: báo sai thông tin chung, không đếm lần sai và không lộ tài khoản có tồn tại.
+  if (options.audience === 'admin' && user.roleId.name === RoleName.CUSTOMER) {
+    throw new AppError('INVALID_CREDENTIALS', 401, 'Thông tin đăng nhập không đúng');
   }
 
   if (user.status === UserStatus.LOCKED) {

@@ -9,6 +9,9 @@ import { UserModel, type IRole } from './auth.model.js';
 
 export const REFRESH_COOKIE_NAME = 'refreshToken';
 export const REFRESH_COOKIE_PATH = '/api/v1/auth';
+/** Admin dùng cookie riêng để phiên admin và phiên khách trên cùng host không ghi đè nhau. */
+export const ADMIN_REFRESH_COOKIE_NAME = 'adminRefreshToken';
+export const ADMIN_REFRESH_COOKIE_PATH = '/api/v1/admin/auth';
 
 const SESSION_KEY_PREFIX = 'auth:refresh:';
 const USER_SESSIONS_PREFIX = 'auth:sessions:';
@@ -37,12 +40,19 @@ export function signAccessToken(user: {
   );
 }
 
-function setRefreshCookie(res: Response, rawToken: string, ttlSeconds: number): void {
-  res.cookie(REFRESH_COOKIE_NAME, rawToken, {
+function refreshCookie(admin: boolean): { name: string; path: string } {
+  return admin
+    ? { name: ADMIN_REFRESH_COOKIE_NAME, path: ADMIN_REFRESH_COOKIE_PATH }
+    : { name: REFRESH_COOKIE_NAME, path: REFRESH_COOKIE_PATH };
+}
+
+function setRefreshCookie(res: Response, rawToken: string, ttlSeconds: number, admin: boolean): void {
+  const { name, path } = refreshCookie(admin);
+  res.cookie(name, rawToken, {
     httpOnly: true,
     secure: !!config.isProduction,
     sameSite: 'strict',
-    path: REFRESH_COOKIE_PATH,
+    path,
     maxAge: ttlSeconds * 1000,
   });
 }
@@ -71,17 +81,21 @@ export async function issueSession(
     .expire(userSessionsKey, config.customerRefreshTtlSeconds)
     .exec();
 
-  setRefreshCookie(res, rawToken, ttlSeconds);
+  setRefreshCookie(res, rawToken, ttlSeconds, isAdminRole(user.roleName));
   return signAccessToken(user);
 }
 
-export function readRefreshToken(req: Request): string | null {
+export function readRefreshToken(req: Request, admin = false): string | null {
   const cookies = req.cookies as Record<string, string | undefined> | undefined;
-  return cookies?.[REFRESH_COOKIE_NAME] ?? null;
+  return cookies?.[refreshCookie(admin).name] ?? null;
 }
 
 /** Xoay vòng refresh token: token cũ bị thu hồi ngay khi dùng (chống replay). */
-export async function rotateSession(rawToken: string, res: Response): Promise<string> {
+export async function rotateSession(
+  rawToken: string,
+  res: Response,
+  options: { admin?: boolean } = {},
+): Promise<string> {
   const tokenHash = hashToken(rawToken);
   const sessionKey = `${SESSION_KEY_PREFIX}${tokenHash}`;
   const stored = await redis.get(sessionKey);
@@ -98,6 +112,9 @@ export async function rotateSession(rawToken: string, res: Response): Promise<st
   const user = await UserModel.findById(userId).populate<{ roleId: IRole }>('roleId', 'name');
   if (!user) {
     throw new AppError('UNAUTHORIZED', 401, 'Tài khoản không tồn tại');
+  }
+  if (options.admin && !isAdminRole(user.roleId.name as RoleName)) {
+    throw new AppError('SESSION_EXPIRED', 401, 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
   }
   if (user.status === UserStatus.LOCKED) {
     throw new AppError('ACCOUNT_LOCKED_BY_ADMIN', 403, user.lockInfo?.reason || 'Tài khoản đã bị khóa');
@@ -116,7 +133,11 @@ export async function rotateSession(rawToken: string, res: Response): Promise<st
   );
 }
 
-export async function revokeSession(rawToken: string, res: Response): Promise<void> {
+export async function revokeSession(
+  rawToken: string,
+  res: Response,
+  options: { admin?: boolean } = {},
+): Promise<void> {
   const tokenHash = hashToken(rawToken);
   const sessionKey = `${SESSION_KEY_PREFIX}${tokenHash}`;
   const stored = await redis.get(sessionKey);
@@ -127,7 +148,8 @@ export async function revokeSession(rawToken: string, res: Response): Promise<vo
   }
 
   await redis.del(sessionKey);
-  res.clearCookie(REFRESH_COOKIE_NAME, { path: REFRESH_COOKIE_PATH });
+  const { name, path } = refreshCookie(options.admin ?? false);
+  res.clearCookie(name, { path });
 }
 
 /** Thu hồi mọi phiên của người dùng (dùng khi đổi/quên mật khẩu). */

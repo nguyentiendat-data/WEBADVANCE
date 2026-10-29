@@ -22,6 +22,7 @@
     "build:server": "tsc -p server/tsconfig.json",
     "build:web": "ng build customer-web && ng build admin-web",
     "seed:roles": "tsx server/seed/roles.ts",
+    "seed:admin": "tsx server/seed/admin-accounts.ts",
     "test:auth": "vitest run"
   },
   "private": true,
