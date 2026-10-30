@@ -1,3 +1,4 @@
+import { thumbnailsByVariant, variantLabel } from './item-display.js';
 import mongoose, { type Types } from 'mongoose';
 import { AppError } from '../../utils/app-error.js';
 import {
@@ -45,10 +46,11 @@ export async function returnDays(): Promise<number> {
   return typeof value === 'number' && value >= 0 ? value : 7;
 }
 export async function eligibleOrder(order: OrderDoc) {
-  const [shipment, days, previous] = await Promise.all([
+  const [shipment, days, previous, thumbs] = await Promise.all([
     ShipmentModel.findOne({ orderId: order._id }).lean(),
     returnDays(),
     ReturnRequestModel.find({ orderId: order._id }).lean(),
+    thumbnailsByVariant(order.items.map((i) => i.variantId)),
   ]);
   const eligible = isReturnEligible(order.status, shipment?.actualDeliveryDate, days);
   return {
@@ -67,6 +69,8 @@ export async function eligibleOrder(order: OrderDoc) {
       return {
         id: item._id.toString(),
         name: item.snapshot.name,
+        variantLabel: variantLabel(item.snapshot),
+        thumbnail: thumbs.get(item.variantId.toString()) ?? '',
         quantity: item.quantity,
         returnableQuantity: eligible ? remaining : 0,
         actions: { canReturn: eligible && remaining > 0 },

@@ -5,6 +5,7 @@ export type IconName =
   | 'lucide:search'
   | 'lucide:camera'
   | 'lucide:heart'
+  | 'lucide:heart-filled'
   | 'lucide:user'
   | 'lucide:shopping-cart'
   | 'lucide:chevron-down'

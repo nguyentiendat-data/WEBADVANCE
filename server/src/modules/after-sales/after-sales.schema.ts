@@ -6,6 +6,7 @@ export const contactSchema = z.object({
     .string()
     .trim()
     .regex(/^(?:0|\+?84)\d{9,10}$/, 'Số điện thoại không hợp lệ'),
+  email: z.string().trim().email('Email không hợp lệ').max(150).optional(),
   address: z.string().trim().min(10).max(500),
 });
 export const evidenceSchema = z
@@ -14,6 +15,7 @@ export const evidenceSchema = z
   .max(6);
 export const warrantySchema = z.object({
   warrantyCardId: objectId,
+  defectType: z.string().trim().max(100).optional(),
   defectDescription: z.string().trim().min(10).max(3000),
   evidence: evidenceSchema,
   contact: contactSchema,

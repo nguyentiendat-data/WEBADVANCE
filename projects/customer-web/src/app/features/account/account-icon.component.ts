@@ -4,7 +4,7 @@ export type IconName =
   | 'user' | 'archive' | 'wrench' | 'map-pin' | 'heart' | 'star' | 'star-filled' | 'log-out'
   | 'clock' | 'clipboard-check' | 'truck' | 'package' | 'x-circle' | 'calendar' | 'help'
   | 'home' | 'image-plus' | 'chevron-down' | 'chevron-up' | 'search' | 'camera' | 'cart'
-  | 'trash' | 'close' | 'ticket' | 'youtube' | 'tiktok' | 'instagram' | 'facebook';
+  | 'trash' | 'house' | 'plus' | 'close' | 'ticket' | 'youtube' | 'tiktok' | 'instagram' | 'facebook';
 
 /** Bộ icon nét mảnh (theo phong cách Lucide) dùng cho header, footer và trang tài khoản. */
 @Component({
@@ -39,6 +39,8 @@ export type IconName =
         @case ('cart') { <svg:circle cx="8" cy="21" r="1" /><svg:circle cx="19" cy="21" r="1" /><svg:path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /> }
         @case ('trash') { <svg:path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /> }
         @case ('ticket') { <svg:path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><svg:path d="M13 5v2M13 17v2M13 11v2" /> }
+        @case ('house') { <svg:path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /><svg:path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> }
+        @case ('plus') { <svg:path d="M12 5v14M5 12h14" /> }
         @case ('close') { <svg:path d="M18 6 6 18M6 6l12 12" /> }
         @case ('youtube') { <svg:path fill="currentColor" stroke="none" fill-rule="evenodd" d="M23 7.5a3 3 0 0 0-2.1-2.1C19 5 12 5 12 5s-7 0-8.9.4A3 3 0 0 0 1 7.5 31 31 0 0 0 .6 12a31 31 0 0 0 .4 4.5 3 3 0 0 0 2.1 2.1C5 19 12 19 12 19s7 0 8.9-.4a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .4-4.5 31 31 0 0 0-.4-4.5ZM9.75 15V9l5.75 3Z" /> }
         @case ('tiktok') { <svg:rect fill="currentColor" stroke="none" x="2" y="2" width="20" height="20" rx="4" /><svg:path stroke="#fff" stroke-width="2" d="M13 6v8.5a2.5 2.5 0 1 1-2.5-2.5M13 6c.5 2 2 3 4 3" /> }

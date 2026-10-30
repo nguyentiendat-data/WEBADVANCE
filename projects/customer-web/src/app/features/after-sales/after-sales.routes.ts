@@ -5,7 +5,7 @@ export const AFTER_SALES_ROUTES: Routes = [
     path: '',
     canActivate: [
       (route, state) =>
-        ['warranty', 'return', 'requests'].includes(route.queryParamMap.get('view') ?? '')
+        route.queryParamMap.get('view') === 'requests'
           ? authGuard(route, state)
           : true,
     ],

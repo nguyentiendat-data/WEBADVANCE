@@ -1,6 +1,4 @@
 :host { display: block; }
-.orders-screen { max-width: 820px; margin: 0 auto; }
-.screen-heading { margin: 0 0 20px; font-size: 20px; font-weight: 700; text-transform: uppercase; }
 
 .filter-tabs { display: flex; gap: 6px; margin-bottom: 20px; overflow-x: auto; border-bottom: 1px solid var(--gray-light); }
 .filter-tabs button { flex: none; padding: 10px 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: #7b8185; font-size: 13px; cursor: pointer; }

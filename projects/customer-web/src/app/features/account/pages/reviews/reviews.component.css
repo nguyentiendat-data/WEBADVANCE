@@ -1,6 +1,4 @@
 :host { display: block; }
-.reviews-screen { max-width: 912px; }
-.screen-heading { margin-bottom: 18px; }
 
 .review-tabs { display: flex; gap: 26px; margin: 0 4px 22px 0; border-bottom: 1px solid var(--gray-light); }
 .review-tabs button { margin-bottom: -1px; padding: 10px 14px 12px; border: 0; border-bottom: 2px solid transparent; background: none; color: #c4c4c4; font-size: 15px; font-weight: 600; cursor: pointer; }

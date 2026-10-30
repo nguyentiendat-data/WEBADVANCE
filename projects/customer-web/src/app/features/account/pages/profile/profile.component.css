@@ -1,10 +1,8 @@
 :host { display: block; }
-.profile-screen { max-width: 1000px; }
 /* Mọi khối nội dung cùng một cột 820px, căn giữa nên thẳng hàng hai bên */
-.profile-screen > .screen-heading, .profile-screen > .profile-form, .profile-screen > .profile-section,
+.profile-screen > .section-heading, .profile-screen > .profile-form, .profile-screen > .profile-section,
 .profile-screen > .form-notice, .profile-screen > .api-error { width: 100%; max-width: 820px; margin-right: auto; margin-left: auto; }
-.page-title { margin: 0 0 28px; font-size: 14px; font-weight: 700; text-align: center; text-transform: uppercase; }
-.screen-heading { margin: 0 0 22px; font-size: 20px; font-weight: 700; text-transform: uppercase; }
+.section-heading { margin: 0 0 18px; font-size: 15px; font-weight: 600; }
 
 .account-picker { max-width: 780px; margin: 0 0 24px; padding: 16px; border: 1px dashed var(--gray); border-radius: 4px; background: #fafafa; }
 .account-picker > p { margin: 0 0 12px; color: #555; font-size: 13px; line-height: 1.5; }

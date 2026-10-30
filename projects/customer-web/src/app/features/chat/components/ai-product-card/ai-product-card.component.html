@@ -35,8 +35,15 @@
       <button type="button" disabled title="Chức năng đang phát triển" aria-label="Thêm vào giỏ hàng">
         <app-icon name="lucide:shopping-cart" [size]="16" />
       </button>
-      <button type="button" disabled title="Chức năng đang phát triển" aria-label="Thêm vào yêu thích">
-        <app-icon name="lucide:heart" [size]="16" />
+      <button
+        type="button"
+        class="product__wish"
+        [class.product__wish--on]="wished()"
+        [attr.aria-pressed]="wished()"
+        [attr.aria-label]="wished() ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'"
+        (click)="toggleWish()"
+      >
+        <app-icon [name]="wished() ? 'lucide:heart-filled' : 'lucide:heart'" [size]="16" />
       </button>
     </span>
   </footer>

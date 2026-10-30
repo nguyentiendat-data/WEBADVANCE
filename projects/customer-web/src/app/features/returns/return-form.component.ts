@@ -4,7 +4,9 @@ import {
   DestroyRef,
   inject,
   signal,
+  computed,
   input,
+  OnInit,
   output,
 } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -39,9 +41,13 @@ import { EvidenceUploadComponent } from '../../shared/ui/evidence-upload/evidenc
   imports: [ReactiveFormsModule, RouterLink, EvidenceUploadComponent, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './return-form.component.html',
+  styleUrl: '../after-sales/request-form.css',
 })
-export class ReturnFormComponent {
+export class ReturnFormComponent implements OnInit {
   readonly embedded = input(false);
+  /** Đơn và sản phẩm đã chọn sẵn từ bước tìm sản phẩm: ẩn ô chọn đơn/sản phẩm. */
+  readonly presetOrderId = input('');
+  readonly presetItemId = input('');
   readonly requestCreated = output<string>();
   private readonly api = inject(ReturnExchangeService);
   private readonly catalog = inject(CatalogApiService);
@@ -95,6 +101,12 @@ export class ReturnFormComponent {
       address: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
     }),
   });
+  private readonly selectedItemId = toSignal(this.form.controls.orderItemId.valueChanges, {
+    initialValue: this.form.controls.orderItemId.value,
+  });
+  protected readonly selectedItem = computed(
+    () => this.order()?.items.find((item) => item.id === this.selectedItemId()) ?? null,
+  );
   protected readonly replacementSearch = new FormControl('', { nonNullable: true });
   protected readonly replacementSlug = new FormControl('', { nonNullable: true });
   protected readonly replacements = toSignal(
@@ -179,8 +191,15 @@ export class ReturnFormComponent {
       )
       .subscribe((order) => {
         this.order.set(order);
+        const itemId = this.presetItemId();
+        if (itemId && order?.items.some((i) => i.id === itemId && i.actions.canReturn)) {
+          this.form.controls.orderItemId.setValue(itemId);
+        }
         this.orderLoading.set(false);
       });
+  }
+  ngOnInit(): void {
+    if (this.presetOrderId()) this.form.controls.orderId.setValue(this.presetOrderId());
   }
   protected maxQuantity(): number {
     return (
@@ -242,7 +261,7 @@ export class ReturnFormComponent {
           if (this.embedded()) {
             this.requestCreated.emit(result.id);
             this.loading.set(false);
-          } else void this.router.navigate(['/support'], { queryParams: { view: 'requests', kind: 'return', request: result.id } });
+          } else void this.router.navigate(['/account/after-sales'], { queryParams: { kind: 'return', request: result.id } });
         },
         error: (error: unknown) => {
           this.error.set(apiErrorMessage(error));

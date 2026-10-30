@@ -1,5 +1,11 @@
 <section class="account-screen wishlist-screen">
-  <h1 class="wishlist-title">DANH SÁCH YÊU THÍCH</h1>
+  <h1 class="screen-heading">Danh sách yêu thích</h1>
+  @if (guest()) {
+    <p class="form-notice guest-notice" role="status">
+      Danh sách yêu thích này chỉ được lưu tạm thời và sẽ mất khi bạn đóng trình duyệt.
+      <a routerLink="/auth/login" [queryParams]="{ returnUrl: '/account/wishlist' }">Đăng nhập</a> để lưu lại vào tài khoản.
+    </p>
+  }
   @if (notice(); as notice) { <p class="form-notice" [class.error]="notice.error" role="status">{{ notice.text }}</p> }
 
   @if (loading()) {

@@ -22,7 +22,7 @@
     <div class="product-gallery">
       <div class="main-image">
         <img [src]="product.images[selectedImageIndex()]" [alt]="product.name" />
-        <button class="favorite-button" type="button" (click)="toggleFavorite()" [attr.aria-pressed]="isFavorite()" [attr.aria-label]="isFavorite() ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'"><app-icon name="lucide:heart" [size]="20" /></button>
+        <button class="favorite-button" type="button" (click)="toggleFavorite()" [attr.aria-pressed]="isFavorite()" [attr.aria-label]="isFavorite() ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'"><app-icon [name]="isFavorite() ? 'lucide:heart-filled' : 'lucide:heart'" [size]="20" /></button>
       </div>
       <div class="thumbnails" aria-label="Hình ảnh sản phẩm">
         @for (image of product.images; track $index) {

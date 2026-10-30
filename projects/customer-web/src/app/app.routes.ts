@@ -1,5 +1,11 @@
 import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthService } from './core/auth/auth.service';
 import { authGuard } from './core/guards/auth.guard';
+
+const wishlistEntryGuard = () =>
+  inject(AuthService).isAuthenticated() ? inject(Router).createUrlTree(['/account/wishlist']) : true;
 
 export const routes: Routes = [
   { path: 'support', loadChildren: () => import('./features/after-sales/after-sales.routes').then((m) => m.AFTER_SALES_ROUTES) },
@@ -53,6 +59,15 @@ export const routes: Routes = [
     // Header trắng ngay từ đầu vì trang không có ảnh lớn ở đầu trang.
     data: { layout: 'solid' },
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
+  },
+  {
+    // Khách chưa đăng nhập xem danh sách yêu thích tạm; đã đăng nhập thì dùng trang trong tài khoản.
+    path: 'wishlist',
+    data: { layout: 'solid' },
+    canActivate: [wishlistEntryGuard],
+    title: 'Danh sách yêu thích | CaraVeso',
+    loadComponent: () =>
+      import('./features/account/pages/wishlist/wishlist.component').then((m) => m.WishlistComponent),
   },
   {
     path: 'account',

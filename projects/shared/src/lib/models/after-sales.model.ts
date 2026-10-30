@@ -1,6 +1,7 @@
 export interface Contact {
   name: string;
   phone: string;
+  email?: string;
   address: string;
 }
 export interface TimelineEntry {
@@ -13,6 +14,8 @@ export interface WarrantyCard {
   orderId: string;
   orderCode: string;
   productName: string;
+  variantLabel?: string;
+  thumbnail?: string;
   serialNumber: string;
   quantity: number;
   warrantyMonths: number;
@@ -23,6 +26,7 @@ export interface WarrantyCard {
 }
 export interface WarrantySubmission {
   warrantyCardId: string;
+  defectType?: string;
   defectDescription: string;
   evidence: string[];
   contact: Contact;
@@ -79,6 +83,8 @@ export interface EligibleOrder {
   items: {
     id: string;
     name: string;
+    variantLabel?: string;
+    thumbnail?: string;
     quantity: number;
     returnableQuantity: number;
     actions: { canReturn: boolean };

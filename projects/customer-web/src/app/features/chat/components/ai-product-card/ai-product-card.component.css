@@ -143,3 +143,12 @@
     pointer-events: none;
   }
 }
+
+.product__actions .product__wish {
+  opacity: 1;
+  cursor: pointer;
+}
+
+.product__actions .product__wish--on {
+  color: #e11d2e;
+}

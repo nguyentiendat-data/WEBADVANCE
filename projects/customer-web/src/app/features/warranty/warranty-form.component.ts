@@ -4,9 +4,12 @@ import {
   DestroyRef,
   inject,
   signal,
+  computed,
   input,
+  OnInit,
   output,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -17,12 +20,15 @@ import { apiErrorMessage } from '../../core/api-error';
 import { EvidenceUploadComponent } from '../../shared/ui/evidence-upload/evidence-upload.component';
 @Component({
   selector: 'app-warranty-form',
-  imports: [ReactiveFormsModule, RouterLink, EvidenceUploadComponent],
+  imports: [ReactiveFormsModule, RouterLink, DatePipe, EvidenceUploadComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './warranty-form.component.html',
+  styleUrl: '../after-sales/request-form.css',
 })
-export class WarrantyFormComponent {
+export class WarrantyFormComponent implements OnInit {
   readonly embedded = input(false);
+  /** Phiếu đã chọn sẵn từ bước tìm sản phẩm: ẩn ô chọn phiếu. */
+  readonly presetCardId = input('');
   readonly requestCreated = output<string>();
   private readonly api = inject(WarrantyService);
   private readonly auth = inject(AuthService);
@@ -35,23 +41,46 @@ export class WarrantyFormComponent {
   protected readonly uploading = signal(false);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
+  protected readonly defectTypes = [
+    'Lỗi kết cấu khung / chân ghế',
+    'Lỗi bề mặt, màu sắc, bong tróc',
+    'Lỗi vải / da / đệm mút',
+    'Lỗi phụ kiện, bản lề, ray trượt',
+    'Lỗi khác',
+  ];
   protected readonly form = this.fb.nonNullable.group({
     warrantyCardId: [this.route.snapshot.queryParamMap.get('card') ?? '', Validators.required],
+    defectType: ['', Validators.required],
     defectDescription: [
       '',
-      [Validators.required, Validators.minLength(10), Validators.maxLength(3000)],
+      [Validators.required, Validators.minLength(10), Validators.maxLength(500)],
     ],
+    agree: [false, Validators.requiredTrue],
     contact: this.fb.nonNullable.group({
       name: [
         this.auth.user()?.fullName ?? '',
         [Validators.required, Validators.minLength(2), Validators.maxLength(100)],
       ],
-      phone: ['', [Validators.required, Validators.pattern(/^(?:0|\+?84)\d{9,10}$/)]],
+      phone: [
+        this.auth.user()?.phoneNumber ?? '',
+        [Validators.required, Validators.pattern(/^(?:0|\+?84)\d{9,10}$/)],
+      ],
+      email: [this.auth.user()?.email ?? '', [Validators.required, Validators.email]],
       address: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
     }),
   });
+  private readonly selectedId = toSignal(this.form.controls.warrantyCardId.valueChanges, {
+    initialValue: this.form.controls.warrantyCardId.value,
+  });
+  protected readonly selected = computed(() => {
+    const id = this.selectedId() || this.presetCardId();
+    return (this.cards() ?? []).find((card) => card.id === id) ?? null;
+  });
   constructor() {
     this.reload();
+  }
+  ngOnInit(): void {
+    if (this.presetCardId()) this.form.controls.warrantyCardId.setValue(this.presetCardId());
   }
   protected reload(): void {
     this.cards.set(undefined);
@@ -63,17 +92,24 @@ export class WarrantyFormComponent {
   protected submit(): void {
     this.form.markAllAsTouched();
     if (this.form.invalid || !this.evidence().length || this.loading() || this.uploading()) return;
+    const raw = this.form.getRawValue();
     this.error.set('');
     this.loading.set(true);
     this.api
-      .create({ ...this.form.getRawValue(), evidence: this.evidence() })
+      .create({
+        warrantyCardId: raw.warrantyCardId,
+        defectType: raw.defectType,
+        defectDescription: raw.defectDescription,
+        contact: raw.contact,
+        evidence: this.evidence(),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
           if (this.embedded()) {
             this.requestCreated.emit(result.id);
             this.loading.set(false);
-          } else void this.router.navigate(['/support'], { queryParams: { view: 'requests', kind: 'warranty', request: result.id } });
+          } else void this.router.navigate(['/account/after-sales'], { queryParams: { kind: 'warranty', request: result.id } });
         },
         error: (error: unknown) => {
           this.error.set(apiErrorMessage(error));

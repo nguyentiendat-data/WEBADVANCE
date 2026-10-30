@@ -2,7 +2,7 @@ import { Schema, model, type Types } from 'mongoose';
 export interface OrderItemDoc {
   _id: Types.ObjectId;
   variantId: Types.ObjectId;
-  snapshot: { name: string; sku: string };
+  snapshot: { name: string; sku: string; color?: string; material?: string; dimensions?: string };
   quantity: number;
   finalAmount: number;
 }
@@ -78,6 +78,7 @@ export const WarrantyCardModel = model<WarrantyCardDoc>(
 export interface Contact {
   name: string;
   phone: string;
+  email?: string;
   address: string;
 }
 export interface TimelineEntry {
@@ -89,6 +90,7 @@ export interface WarrantyRequestDoc {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
   warrantyCardId: Types.ObjectId;
+  defectType?: string;
   defectDescription: string;
   evidence: string[];
   contact: Contact;
@@ -102,7 +104,7 @@ export interface WarrantyRequestDoc {
   timeline: TimelineEntry[];
 }
 const contactSchema = new Schema<Contact>(
-  { name: String, phone: String, address: String },
+  { name: String, phone: String, email: String, address: String },
   { _id: false },
 );
 const timelineSchema = new Schema<TimelineEntry>(
@@ -115,6 +117,7 @@ export const WarrantyRequestModel = model<WarrantyRequestDoc>(
     {
       userId: { type: Schema.Types.ObjectId, required: true, index: true },
       warrantyCardId: { type: Schema.Types.ObjectId, required: true },
+      defectType: String,
       defectDescription: String,
       evidence: [String],
       contact: contactSchema,

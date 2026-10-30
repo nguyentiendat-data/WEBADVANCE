@@ -1,6 +1,6 @@
 <section class="account-screen profile-screen">
-  <h1 class="page-title">Hồ sơ của tôi</h1>
-  <h2 class="screen-heading">Thông tin của tôi</h2>
+  <h1 class="screen-heading">Hồ sơ của tôi</h1>
+  <h2 class="section-heading">Thông tin của tôi</h2>
 
   @if (notice(); as notice) { <p class="form-notice" [class.error]="notice.error" role="status">{{ notice.text }}</p> }
   @if (loadError()) { <p class="api-error" role="alert">{{ loadError() }}</p> }

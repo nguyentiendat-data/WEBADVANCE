@@ -7,6 +7,7 @@ import {
   WarrantyRequestModel,
   type WarrantyRequestDoc,
 } from './after-sales.model.js';
+import { thumbnailsByVariant, variantLabel as labelOf } from './item-display.js';
 import { normalizeSearch } from '../products/search.service.js';
 import type { z } from 'zod';
 import type { warrantySchema } from './after-sales.schema.js';
@@ -51,12 +52,18 @@ export async function warrantyCards(userId: Types.ObjectId, query?: string, stat
   const cards = await WarrantyCardModel.find({ orderId: { $in: orders.map((o) => o._id) } })
     .sort({ expiresAt: -1 })
     .lean();
+  const variantIds = cards.flatMap((card) => {
+    const item = byId.get(card.orderId.toString())?.items.find((i) => i._id.equals(card.orderItemId));
+    return item ? [item.variantId] : [];
+  });
+  const thumbByVariant = await thumbnailsByVariant(variantIds);
   return cards
     .map((card) => {
       const order = byId.get(card.orderId.toString())!;
-      const productName =
-        order.items.find((i) => i._id.equals(card.orderItemId))?.snapshot.name ??
-        'Sản phẩm đổi mới';
+      const item = order.items.find((i) => i._id.equals(card.orderItemId));
+      const productName = item?.snapshot.name ?? 'Sản phẩm đổi mới';
+      const variantLabel = labelOf(item?.snapshot);
+      const thumbnail = item ? (thumbByVariant.get(item.variantId.toString()) ?? '') : '';
       const remainingDays = Math.max(
         0,
         Math.ceil((card.expiresAt.getTime() - Date.now()) / 86400000),
@@ -66,6 +73,8 @@ export async function warrantyCards(userId: Types.ObjectId, query?: string, stat
         orderId: card.orderId.toString(),
         orderCode: order.orderCode,
         productName,
+        variantLabel,
+        thumbnail,
         serialNumber: card.serialNumber ?? '',
         quantity: card.quantity,
         warrantyMonths: card.warrantyMonths,
@@ -109,6 +118,7 @@ export async function warrantyRequestDto(request: WarrantyRequestDoc) {
     warrantyCardId: request.warrantyCardId.toString(),
     productName:
       order?.items.find((i) => i._id.equals(card?.orderItemId))?.snapshot.name ?? 'Sản phẩm',
+    defectType: request.defectType ?? '',
     defectDescription: request.defectDescription,
     evidence: request.evidence,
     contact: request.contact ?? { name: order?.shippingAddress?.recipientName ?? '', phone: order?.shippingAddress?.recipientPhone ?? '', address: order?.shippingAddress?.addressLine ?? '' },

@@ -2,12 +2,67 @@
   <h1 class="screen-heading">Dịch vụ hậu mãi</h1>
 
   <div class="filter-tabs" role="tablist" aria-label="Loại yêu cầu">
-    <button type="button" role="tab" [class.active]="tab() === 'warranty'" [attr.aria-selected]="tab() === 'warranty'" (click)="tab.set('warranty')">Bảo hành</button>
-    <button type="button" role="tab" [class.active]="tab() === 'returns'" [attr.aria-selected]="tab() === 'returns'" (click)="tab.set('returns')">Đổi trả</button>
-    <a class="request-button" routerLink="/support" [queryParams]="{ view: tab() === 'warranty' ? 'warranty' : 'return' }">{{ tab() === 'warranty' ? 'Yêu cầu bảo hành' : 'Yêu cầu đổi trả' }}</a>
+    <button type="button" role="tab" [class.active]="tab() === 'warranty'" [attr.aria-selected]="tab() === 'warranty'" (click)="selectTab('warranty')">Bảo hành</button>
+    <button type="button" role="tab" [class.active]="tab() === 'returns'" [attr.aria-selected]="tab() === 'returns'" (click)="selectTab('returns')">Đổi trả</button>
+    <a class="request-button" routerLink="/support" [queryParams]="{ panel: tab() === 'warranty' ? 'warranty' : 'return' }">{{ tab() === 'warranty' ? 'Yêu cầu bảo hành' : 'Yêu cầu đổi trả' }}</a>
   </div>
 
-  @if (tab() === 'warranty') {
+  @if (selectedId()) {
+    <button type="button" class="link-button back-link" (click)="closeDetail()">← Danh sách yêu cầu</button>
+    @let request = detail();
+    @if (request === undefined) {
+      <p role="status">Đang tải chi tiết...</p>
+    } @else if (!request) {
+      <p class="api-error" role="alert">Không tìm thấy yêu cầu hoặc kết nối bị gián đoạn. <button class="link-button" type="button" (click)="retry.next(0)">Thử lại</button></p>
+    } @else {
+      <article class="request-detail">
+        <div class="detail-heading">
+          <div>
+            <span class="detail-kind">{{ isReturn() ? 'Đổi trả' : 'Bảo hành' }}</span>
+            <h2>{{ request.productName }}</h2>
+          </div>
+          <span class="status-pill">{{ labels[request.status] || request.status }}</span>
+        </div>
+        <p class="detail-note">{{ request.defectDescription || request.description }}</p>
+        <dl>
+          <div><dt>Ngày gửi</dt><dd>{{ request.requestedAt | date: 'dd/MM/yyyy HH:mm' : '+0700' }}</dd></div>
+          <div><dt>Liên hệ</dt><dd>{{ request.contact.name }} · {{ request.contact.phone }}</dd></div>
+          <div><dt>Địa chỉ</dt><dd>{{ request.contact.address }}</dd></div>
+          @if (request.refundAccount) {
+            <div><dt>Tài khoản hoàn tiền</dt><dd>{{ request.refundAccount.bankName }} · {{ request.refundAccount.accountNumber }}</dd></div>
+          }
+          @if (request.refundAmount !== undefined) {
+            <div><dt>Số tiền hoàn</dt><dd>{{ request.refundAmount | vnd }}</dd></div>
+          }
+        </dl>
+        @if (request.rejectReason) { <p class="api-error">Lý do từ chối: {{ request.rejectReason }}</p> }
+        @if (request.inspectionResult) { <p>Kết quả kiểm tra: {{ request.inspectionResult }}</p> }
+        <div class="evidence-list">
+          @for (url of request.evidence; track url) {
+            @if (isVideo(url)) {
+              <video [src]="url" controls preload="metadata"></video>
+            } @else {
+              <a [href]="url" target="_blank" rel="noopener"><img [src]="url" alt="Minh chứng đã gửi" loading="lazy" /></a>
+            }
+          }
+        </div>
+        <h3 class="timeline-title">Tiến trình xử lý</h3>
+        <app-request-timeline [entries]="request.timeline" />
+        @if (isReturn() && request.canCancel) {
+          @if (confirming()) {
+            <div class="cancel-box">
+              <p>Bạn muốn hủy yêu cầu đang chờ xử lý này?</p>
+              <button type="button" class="outline-button" [disabled]="cancelling()" (click)="cancelRequest(request.id)">Xác nhận hủy</button>
+              <button type="button" class="link-button" [disabled]="cancelling()" (click)="confirming.set(false)">Giữ yêu cầu</button>
+            </div>
+          } @else {
+            <button type="button" class="outline-button" (click)="confirming.set(true)">Hủy yêu cầu</button>
+          }
+        }
+        @if (actionError()) { <p role="alert" class="api-error">{{ actionError() }}</p> }
+      </article>
+    }
+  } @else if (tab() === 'warranty') {
     @let requests = warranty();
     @if (requests === undefined) {
       <p role="status">Đang tải yêu cầu bảo hành...</p>
@@ -15,13 +70,13 @@
       <p class="api-error" role="alert">Không tải được yêu cầu. <button class="link-button" type="button" (click)="retry.next(0)">Thử lại</button></p>
     } @else {
       @for (request of requests.data; track request.id) {
-        <a class="request-card" routerLink="/support" [queryParams]="{ view: 'requests', kind: 'warranty', request: request.id }">
+        <button type="button" class="request-card" (click)="open(request.id)">
           <div class="request-info">
             <strong>{{ request.productName }}</strong>
             <span>Gửi ngày {{ request.requestedAt | date: 'dd/MM/yyyy' : '+0700' }}</span>
           </div>
           <span class="status-pill">{{ labels[request.status] || request.status }}</span>
-        </a>
+        </button>
       } @empty {
         <div class="empty-state"><h2>Chưa có yêu cầu bảo hành</h2><p>Các yêu cầu bảo hành bạn gửi sẽ hiện ở đây để theo dõi tiến độ.</p></div>
       }
@@ -41,13 +96,13 @@
       <p class="api-error" role="alert">Không tải được yêu cầu. <button class="link-button" type="button" (click)="retry.next(0)">Thử lại</button></p>
     } @else {
       @for (request of requests.data; track request.id) {
-        <a class="request-card" routerLink="/support" [queryParams]="{ view: 'requests', kind: 'return', request: request.id }">
+        <button type="button" class="request-card" (click)="open(request.id)">
           <div class="request-info">
             <strong>{{ request.productName }}</strong>
             <span>{{ request.type === 'EXCHANGE' ? 'Đổi hàng' : 'Trả hàng' }} · {{ request.quantity }} sản phẩm · {{ request.requestedAt | date: 'dd/MM/yyyy' : '+0700' }}</span>
           </div>
           <span class="status-pill">{{ labels[request.status] || request.status }}</span>
-        </a>
+        </button>
       } @empty {
         <div class="empty-state"><h2>Chưa có yêu cầu đổi trả</h2><p>Các yêu cầu đổi trả bạn gửi sẽ hiện ở đây để theo dõi tiến độ.</p></div>
       }

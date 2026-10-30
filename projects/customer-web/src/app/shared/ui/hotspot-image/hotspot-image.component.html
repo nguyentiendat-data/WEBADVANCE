@@ -19,7 +19,7 @@
           <a class="detail-link" [routerLink]="['/products', hotspot.product.slug]">Nhấn để xem chi tiết</a>
           <button type="button" class="icon-button" aria-label="Thêm vào giỏ hàng" [disabled]="hotspot.product.stockStatus === 'OUT_OF_STOCK'" (click)="addToCart(hotspot.product)"><app-icon name="lucide:shopping-cart" [size]="23" /></button>
           <button type="button" class="icon-button heart" [class.saved]="wishlist.ids().includes(hotspot.product.id)" [attr.aria-pressed]="wishlist.ids().includes(hotspot.product.id)"
-            [attr.aria-label]="wishlist.ids().includes(hotspot.product.id) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'" (click)="wishlist.toggle(hotspot.product.id)"><app-icon name="lucide:heart" [size]="21" /></button>
+            [attr.aria-label]="wishlist.ids().includes(hotspot.product.id) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'" (click)="wishlist.toggle(hotspot.product.id)"><app-icon [name]="wishlist.ids().includes(hotspot.product.id) ? 'lucide:heart-filled' : 'lucide:heart'" [size]="21" /></button>
         </div>
         @if (hotspot.product.stockStatus === 'OUT_OF_STOCK') { <p class="feedback">Sản phẩm hiện hết hàng.</p> }
       </section>
