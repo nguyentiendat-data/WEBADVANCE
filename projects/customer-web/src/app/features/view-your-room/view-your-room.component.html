@@ -1,0 +1,143 @@
+<app-view-room-header />
+
+<section class="vyr">
+  <header class="vyr__intro">
+    <h1 class="vyr__title">VIEW YOUR ROOM</h1>
+    <p class="vyr__lead">
+      Khám phá những sản phẩm nội thất trong căn phòng được thiết kế theo kích thước thực tế trước
+      khi mang chúng về nhà.
+    </p>
+  </header>
+
+  <div class="vyr__features">
+    <article class="feature">
+      <h3 class="feature__title">Chọn kích thước phòng</h3>
+      <p class="feature__text">Chọn kích thước có sẵn hoặc nhập các số đo chính xác.</p>
+    </article>
+    <article class="feature">
+      <h3 class="feature__title">Thêm sản phẩm và thiết kế</h3>
+      <p class="feature__text">
+        Kéo, xoay nội thất. Sắp xếp và xem không gian như trong chính căn phòng của bạn.
+      </p>
+    </article>
+    <article class="feature">
+      <h3 class="feature__title">Mua sắm sản phẩm ngay</h3>
+      <p class="feature__text">
+        Thêm sản phẩm vào giỏ hàng hoặc thêm vào danh sách yêu thích ngay.
+      </p>
+    </article>
+  </div>
+
+  <div class="vyr__grid">
+    <div class="vyr__panel">
+      <app-room-settings
+        [room]="room()"
+        [roomTypes]="roomTypes()"
+        [roomTypeId]="roomTypeId()"
+        [roomSlug]="roomSlug()"
+        (roomChange)="onRoomChange($event)"
+        (roomTypeChange)="onRoomTypeChange($event)"
+      />
+    </div>
+
+    <div class="vyr__stage">
+      <div class="vyr__canvas" #canvasHost></div>
+
+      @if (selectedItem(); as selected) {
+        <div class="vyr__selected" role="group" [attr.aria-label]="'Đang chọn ' + selected.name">
+          <span class="vyr__selected-name">{{ selected.name }}</span>
+          <button type="button" class="vyr__chip-btn" (click)="rotateSelected()">Xoay 90°</button>
+          <button
+            type="button"
+            class="vyr__chip-btn vyr__chip-btn--danger"
+            (click)="removeSelected()"
+          >
+            Xóa
+          </button>
+        </div>
+      }
+
+      <button
+        type="button"
+        class="vyr__save"
+        [disabled]="!auth.isLoggedIn() || saving()"
+        [title]="auth.isLoggedIn() ? 'Lưu bố cục của bạn' : 'Đăng nhập để lưu bố cục'"
+        (click)="save()"
+      >
+        {{ auth.isLoggedIn() ? (saving() ? 'Đang lưu...' : 'Lưu bố cục') : 'Đăng nhập để lưu' }}
+      </button>
+
+      @if (notice(); as message) {
+        <p class="vyr__notice" role="status">{{ message }}</p>
+      }
+
+      <div class="vyr__toolbar">
+        <div class="vyr__group">
+          <button type="button" class="tool" [disabled]="!canUndo()" (click)="undo()">
+            <span aria-hidden="true">&#8630;</span> Trước
+          </button>
+          <button type="button" class="tool" [disabled]="!canRedo()" (click)="redo()">
+            Sau <span aria-hidden="true">&#8631;</span>
+          </button>
+        </div>
+
+        <div class="vyr__group">
+          <button type="button" class="tool" aria-label="Thu nhỏ" (click)="zoomOut()">
+            &minus;
+          </button>
+          <span class="tool tool--static">{{ zoomPercent() }}%</span>
+          <button type="button" class="tool" aria-label="Phóng to" (click)="zoomIn()">+</button>
+        </div>
+
+        <div class="vyr__group">
+          <button
+            type="button"
+            class="tool"
+            [class.tool--active]="viewMode() === 'top'"
+            (click)="setView('top')"
+          >
+            Góc trên
+          </button>
+          <button
+            type="button"
+            class="tool"
+            [class.tool--active]="viewMode() === '3d'"
+            (click)="setView('3d')"
+          >
+            Góc 3D
+          </button>
+          <button type="button" class="tool" (click)="resetLayout()">Tải lại</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="vyr__panel" id="vyr-products">
+      <app-product-panel
+        [suggestions]="suggestions()"
+        [failed]="suggestionsFailed()"
+        (addProduct)="addProduct($event)"
+      />
+    </div>
+  </div>
+</section>
+
+<div class="vyr__bar" role="region" aria-label="Tổng quan phòng">
+  <p class="vyr__summary">
+    <strong>{{ items().length }} Sản phẩm</strong>
+    <span aria-hidden="true">&bull;</span>
+    <span class="vyr__total">{{ formatVnd(total()) }}</span>
+  </p>
+  <div class="vyr__bar-actions">
+    <button
+      type="button"
+      class="vyr__text-btn"
+      disabled
+      title="Giỏ hàng sẽ có sau khi hoàn thiện chức năng giỏ hàng"
+    >
+      Thêm tất cả vào giỏ
+    </button>
+    <button type="button" class="vyr__primary-btn" (click)="scrollToProducts()">
+      Xem sản phẩm
+    </button>
+  </div>
+</div>

@@ -1,0 +1,25 @@
+<section class="flash" [attr.aria-label]="flashSale().promotion.name">
+  <div class="container">
+    <header class="flash__head">
+      <h2 class="flash__logo">
+        <app-icon name="lucide:zap" [size]="26" />
+        <span>FLASH SALE</span>
+      </h2>
+
+      <app-countdown [endDate]="flashSale().promotion.endDate" />
+      <a class="flash__more" routerLink="/promotions">Xem thêm</a>
+    </header>
+
+    <app-scroll-carousel
+      arrowTone="light"
+      [perView]="5"
+      [perViewTablet]="3"
+      [perViewMobile]="2"
+      [label]="flashSale().promotion.name"
+    >
+      @for (product of flashSale().products; track product.id) {
+        <app-product-card [product]="product" [compact]="true" />
+      }
+    </app-scroll-carousel>
+  </div>
+</section>

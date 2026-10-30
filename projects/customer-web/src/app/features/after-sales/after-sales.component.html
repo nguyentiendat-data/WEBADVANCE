@@ -1,0 +1,21 @@
+<section class="feature-page container support-page">
+  <p class="eyebrow"><a routerLink="/">Trang chủ</a><span>/</span>Đổi trả &amp; Bảo hành</p>
+  <app-support-intro [config]="config()" [activePanel]="panel()" (viewSelected)="togglePanel($event)">
+    @if (panel(); as kind) {
+      <app-support-request-panel
+        [kind]="kind"
+        [loggedIn]="!!auth.user()"
+        [cards]="cards()"
+        [presetCardId]="params().get('card') ?? ''"
+        (closed)="togglePanel(kind)"
+        (requestCreated)="onCreated($event.kind, $event.id)"
+      />
+    }
+  </app-support-intro>
+  @if (auth.user()) {
+    <p class="track-hint">
+      Theo dõi các yêu cầu đã gửi tại
+      <a routerLink="/account/after-sales">Tài khoản › Dịch vụ hậu mãi</a>.
+    </p>
+  }
+</section>

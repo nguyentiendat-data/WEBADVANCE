@@ -1,0 +1,69 @@
+<section class="account-screen addresses-screen">
+  <div class="screen-heading"><h1>Thông tin địa chỉ</h1></div>
+  @if (notice(); as notice) { <p class="form-notice" [class.error]="notice.error" role="status">{{ notice.text }}</p> }
+
+  @if (loading()) {
+    <p role="status">Đang tải địa chỉ...</p>
+  } @else if (loadError()) {
+    <p class="api-error" role="alert">{{ loadError() }}</p>
+  } @else {
+    <span class="collapse-control list-chevron" aria-hidden="true"><app-account-icon name="chevron-down" [size]="20" /></span>
+    <div class="address-table" role="table" aria-label="Thông tin địa chỉ">
+      <div class="address-row address-head" role="row">
+        <span role="columnheader">Họ tên</span>
+        <span role="columnheader">Địa chỉ</span>
+        <span role="columnheader">Số điện thoại</span>
+        <span role="columnheader">Thay đổi</span>
+      </div>
+      @for (address of addresses(); track address.id) {
+        <div class="address-row" role="row">
+          <span class="recipient" role="cell">{{ address.recipientName }}</span>
+          <div class="address-cell" role="cell">
+            <p class="address-type"><app-account-icon name="house" [size]="20" /><strong>Nhà riêng</strong>@if (address.isDefault) { <span class="default-tag">Mặc định</span> }</p>
+            <p class="address-text">{{ formatAddress(address) }}</p>
+          </div>
+          <span role="cell">{{ address.recipientPhone }}</span>
+          <span role="cell"><button class="edit-link" type="button" (click)="openForm(address)">Chỉnh sửa</button></span>
+        </div>
+      } @empty {
+        <div class="address-empty">Bạn chưa có địa chỉ nhận hàng nào.</div>
+      }
+    </div>
+
+    @if (!formOpen()) {
+      <button class="primary-button add-address" type="button" (click)="openForm()">Thêm địa chỉ mới</button>
+    } @else {
+      <form class="address-form" (ngSubmit)="saveAddress()">
+        <h2>{{ editingAddressId() ? 'Chỉnh sửa địa chỉ' : 'Thêm địa chỉ mới' }}</h2>
+        <div class="address-fields">
+          <label>Họ tên người nhận *<input [(ngModel)]="form.recipientName" name="recipientName" required maxlength="120" autocomplete="name" /></label>
+          <label>Số điện thoại *<input [(ngModel)]="form.recipientPhone" name="recipientPhone" required maxlength="12" inputmode="tel" autocomplete="tel" placeholder="0xxxxxxxxx" /></label>
+          <label>Tỉnh / thành phố *
+            <input [ngModel]="form.province" (ngModelChange)="onProvinceChange($event)" name="province" required maxlength="120" list="province-options" autocomplete="off" placeholder="Gõ để tìm tỉnh / thành phố" />
+          </label>
+          <label>Phường / xã *
+            <input [(ngModel)]="form.ward" name="ward" required maxlength="120" list="ward-options" autocomplete="off" [disabled]="!wards().length && !!units()?.provinces?.length" [placeholder]="wards().length ? 'Gõ để tìm phường / xã' : 'Chọn tỉnh / thành phố trước'" />
+          </label>
+          <label class="wide">Số nhà, tên đường *<input [(ngModel)]="form.addressLine" name="addressLine" required maxlength="300" autocomplete="address-line1" /></label>
+        </div>
+        <datalist id="province-options">
+          @for (province of units()?.provinces; track province.name) { <option [value]="province.name"></option> }
+        </datalist>
+        <datalist id="ward-options">
+          @for (ward of wards(); track ward) { <option [value]="ward"></option> }
+        </datalist>
+        <label class="default-checkbox">
+          <input type="checkbox" [(ngModel)]="form.isDefault" name="isDefault" [disabled]="editingDefault()" />
+          Đặt làm địa chỉ mặc định
+        </label>
+        <div class="form-actions">
+          @if (editingAddressId()) {
+            <button class="delete-address" type="button" [disabled]="saving()" (click)="deleteAddress()"><app-account-icon name="trash" [size]="15" /> Xoá địa chỉ</button>
+          }
+          <button class="link-button" type="button" (click)="closeForm()">Huỷ</button>
+          <button class="primary-button" type="submit" [disabled]="saving()">{{ saving() ? 'Đang lưu...' : 'Lưu địa chỉ' }}</button>
+        </div>
+      </form>
+    }
+  }
+</section>

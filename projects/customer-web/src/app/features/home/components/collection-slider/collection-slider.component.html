@@ -1,0 +1,44 @@
+<section aria-roledescription="carousel" aria-label="CaraVeso Collections">
+  <h2 class="title">CaraVeso Collections</h2>
+
+  @if (current(); as collection) {
+    <div class="stage">
+      <div class="stage__link">
+        @for (item of collections(); track item.id; let i = $index) {
+          <div
+            class="slide"
+            [class.active]="i === index()"
+            [attr.aria-hidden]="i !== index()"
+            [attr.inert]="i === index() ? null : ''"
+          >
+            @if (slideImage(item); as image) {
+              <app-hotspot-image [image]="image" [ratio]="ratio()" [(active)]="activeHotspot" />
+            }
+          </div>
+        }
+      </div>
+
+      @if (collections().length > 1) {
+        <button
+          type="button"
+          class="arrow arrow--prev"
+          aria-label="Collection trước"
+          (click)="go(-1)"
+        >
+          <app-icon name="lucide:chevron-left" [size]="22" />
+        </button>
+        <button type="button" class="arrow arrow--next" aria-label="Collection sau" (click)="go(1)">
+          <app-icon name="lucide:chevron-right" [size]="22" />
+        </button>
+      }
+    </div>
+
+    <div class="caption">
+      <div class="caption__text">
+        <h3>{{ collection.name }}</h3>
+        <p>{{ collection.slogan }}</p>
+      </div>
+      <a class="explore" [routerLink]="['/collections', collection.slug]">Khám phá thêm</a>
+    </div>
+  }
+</section>

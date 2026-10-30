@@ -1,0 +1,46 @@
+@if (showDock()) {
+  <div class="dock" role="group" aria-label="Công cụ nhanh">
+    <button type="button" class="dock__search" (click)="openSearch()">
+      <app-icon name="lucide:search" [size]="16" />
+      <span>Search</span>
+    </button>
+    <button
+      type="button"
+      class="dock__ai"
+      [class.dock__ai--active]="aiOpen()"
+      (click)="toggleAi()"
+      aria-label="Trợ lý AI CaraVeso"
+      title="Trợ lý AI CaraVeso"
+    >
+      <app-icon name="lucide:sparkles" [size]="16" />
+    </button>
+  </div>
+}
+
+<div class="side">
+  <button
+    type="button"
+    class="side__chat"
+    [class.side__chat--active]="supportOpen()"
+    (click)="openSupport()"
+    [attr.aria-expanded]="supportOpen()"
+    aria-label="Chat với chăm sóc khách hàng"
+    title="Chat với chăm sóc khách hàng"
+  >
+    <app-icon name="mdi:chat-processing" [size]="42" />
+
+    @if (unread() > 0) {
+      <span class="side__badge">{{ unread() > 9 ? '9+' : unread() }}</span>
+    }
+  </button>
+
+  <button
+    type="button"
+    class="side__top"
+    [class.side__top--visible]="showTop()"
+    aria-label="Về đầu trang"
+    (click)="scrollToTop()"
+  >
+    <app-icon name="lucide:chevron-up" [size]="24" />
+  </button>
+</div>
